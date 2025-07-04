@@ -1,60 +1,36 @@
-SubLeaseMate – The Smart Way to Sublet
-📌 App Description
-SubLeaseMate is a mobile and web platform that enables verified renters to temporarily sublet their homes. Designed for flexibility and security, the app simplifies the subletting process with scheduling, verification, digital agreements, and messaging.
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
----
+## Getting Started
 
-🧭 Project Overview
-Goal: Build a functional MVP within 4 weeks that supports subletting, browsing listings, and managing agreements.
-Platforms: Mobile-first (React Native or Flutter); optional web dashboard (React.js).
-Backend: REST or GraphQL API (Node.js/Express or Django/Flask), PostgreSQL, Firebase (auth + notifications).
-Tooling: GitHub, Trello/Jira, Slack/Discord, Figma
+First, run the development server:
 
----
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-👤 Intended Audience
-Primary Users:
-College students renting apartments
-Young professionals on flexible leases
-Secondary Users:
-Travelers, interns, contract workers seeking short-term housing
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
----
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-🧱 Core Features (MVP)
-User Authentication
-Sign up, log in, password recovery
-Separate flows for renters and subletters
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-Create a Sublet Listing
-Address, dates available, pricing, and photos
-Lease upload or agreement disclaimer
-Availability calendar
+## Learn More
 
-Search and Apply
-Filters (location, price, duration, amenities)
-Map view with interactive pins
-Apply to listings with a profile and message
+To learn more about Next.js, take a look at the following resources:
 
-Booking and Agreement
-Renter reviews and approves subletters
-Optional e-signature contract generator
-Placeholder for payment (Stripe stub/invoice)
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-Messaging System
-In-app chat between renters and subletters
-Push/email notifications for engagement
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-Profile Management
-Bio, profile photo, listing history, reviews
-Identity verification stub
+## Deploy on Vercel
 
----
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-🧩 Optional Stretch Features
-Rating/review system for users
-Admin dashboard for reports/moderation
-Google Maps or location API integration
-Legal subletting guidance per region
-
----
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
