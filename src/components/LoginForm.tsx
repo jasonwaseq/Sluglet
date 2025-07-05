@@ -15,15 +15,37 @@ export default function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleLogin} className="bg-white bg-opacity-90 rounded-2xl shadow-xl p-8 max-w-md w-full">
-      <h2 className="text-2xl font-semibold mb-6 text-center">Welcome</h2>
+    <form 
+      onSubmit={handleLogin} 
+      className="bg-white bg-opacity-90 rounded-2xl shadow-xl w-full"
+      style={{
+        maxWidth: 'min(400px, 80vw)',
+        minWidth: '280px',
+        padding: 'min(2rem, 4vw)',
+        aspectRatio: '1.2/1'
+      }}
+    >
+      <h2 
+        className="font-semibold mb-6 text-center"
+        style={{
+          fontSize: 'min(2rem, 5vw)',
+          marginBottom: 'min(1.5rem, 3vw)'
+        }}
+      >
+        Welcome
+      </h2>
 
       <input
         type="email"
         placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="w-full mb-4 p-3 rounded-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-800"
+        className="w-full mb-4 rounded-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-800"
+        style={{
+          fontSize: 'min(1rem, 3vw)',
+          padding: 'min(0.75rem, 2vw)',
+          marginBottom: 'min(1rem, 2vw)'
+        }}
         required
       />
       <input
@@ -31,13 +53,22 @@ export default function LoginForm() {
         placeholder="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        className="w-full mb-6 p-3 rounded-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-800"
+        className="w-full mb-6 rounded-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-800"
+        style={{
+          fontSize: 'min(1rem, 3vw)',
+          padding: 'min(0.75rem, 2vw)',
+          marginBottom: 'min(1.5rem, 3vw)'
+        }}
         required
       />
 
       <button
         type="submit"
-        className="w-full bg-black text-white py-3 rounded-lg hover:bg-black transition"
+        className="w-full bg-black text-white rounded-lg hover:bg-black transition"
+        style={{
+          fontSize: 'min(1rem, 3vw)',
+          padding: 'min(0.75rem, 2vw)'
+        }}
       >
         Login / Sign Up
       </button>

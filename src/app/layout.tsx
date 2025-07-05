@@ -7,11 +7,6 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'SlugLet',
   description: 'Your URL shortening solution',
-  icons: {
-    icon: '/Sluglet Logo.svg',
-    shortcut: '/Sluglet Logo.svg',
-    apple: '/Sluglet Logo.svg',
-  },
 }
 
 export default function RootLayout({
