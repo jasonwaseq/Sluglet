@@ -4,7 +4,7 @@ import LoginForm from '@/components/LoginForm';
 export default function Home() {
   return (
     <div 
-      className="w-screen h-screen bg-black flex items-center justify-center"
+      className="w-screen h-screen bg-sky-500 flex items-center justify-center"
       style={{
         aspectRatio: '16/9',
         minHeight: '100vh',
