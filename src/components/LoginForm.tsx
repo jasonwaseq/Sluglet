@@ -1,77 +1,56 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { auth } from '@/lib/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement auth logic
-    router.push('/dashboard');
+    setLoading(true);
+    setError('');
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // Session is handled by onAuthStateChanged in the main page
+    } catch (err: any) {
+      setError(err.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <form 
-      onSubmit={handleLogin} 
-      className="bg-white bg-opacity-90 rounded-2xl shadow-xl w-full"
-      style={{
-        maxWidth: 'min(400px, 80vw)',
-        minWidth: '280px',
-        padding: 'min(2rem, 4vw)',
-        aspectRatio: '1.2/1'
-      }}
-    >
-      <h2 
-        className="font-semibold mb-6 text-center"
-        style={{
-          fontSize: 'min(2rem, 5vw)',
-          marginBottom: 'min(1.5rem, 3vw)'
-        }}
-      >
-        Welcome
-      </h2>
-
+    <form onSubmit={handleLogin} className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md border border-gray-200">
+      <h2 className="text-2xl font-semibold mb-6 text-center text-gray-800">Welcome Back</h2>
       <input
         type="email"
         placeholder="Email"
         value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className="w-full mb-4 rounded-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-800"
-        style={{
-          fontSize: 'min(1rem, 3vw)',
-          padding: 'min(0.75rem, 2vw)',
-          marginBottom: 'min(1rem, 2vw)'
-        }}
+        onChange={e => setEmail(e.target.value)}
+        className="w-full mb-4 p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
         required
       />
       <input
         type="password"
         placeholder="Password"
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        className="w-full mb-6 rounded-lg border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-800"
-        style={{
-          fontSize: 'min(1rem, 3vw)',
-          padding: 'min(0.75rem, 2vw)',
-          marginBottom: 'min(1.5rem, 3vw)'
-        }}
+        onChange={e => setPassword(e.target.value)}
+        className="w-full mb-6 p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
         required
       />
-
       <button
         type="submit"
-        className="w-full bg-black text-white rounded-lg hover:bg-black transition"
-        style={{
-          fontSize: 'min(1rem, 3vw)',
-          padding: 'min(0.75rem, 2vw)'
-        }}
+        className="w-full bg-black text-white py-3 rounded-lg hover:bg-black transition"
+        disabled={loading}
       >
-        Login / Sign Up
+        {loading ? 'Logging in...' : 'Log In'}
       </button>
+      {error && <p className="text-red-600 mt-4 text-center">{error}</p>}
     </form>
   );
 } 
