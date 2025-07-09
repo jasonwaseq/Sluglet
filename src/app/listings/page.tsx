@@ -4,82 +4,91 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 
-// Mock data - replace with real API calls
-const mockListings = [
-  {
-    id: 1,
-    title: "Cozy Studio in Downtown",
-    price: 1200,
-    duration: "6 months",
-    location: "Downtown",
-    description: "Beautiful studio apartment with great amenities",
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop"
-  },
-  {
-    id: 2,
-    title: "2BR Apartment Near Campus",
-    price: 800,
-    duration: "3 months",
-    location: "University District",
-    description: "Perfect for students, fully furnished",
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop"
-  },
-  {
-    id: 3,
-    title: "Luxury 1BR with City View",
-    price: 1500,
-    duration: "12 months",
-    location: "Midtown",
-    description: "High-end apartment with amazing city views",
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop"
-  }
-];
+interface Listing {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  duration: string;
+  location: string;
+  imageUrl?: string;
+  images?: string[];
+  amenities: string[];
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  availableFrom: string;
+  createdAt: string;
+  user: {
+    email: string;
+  };
+}
 
 export default function ListingsPage() {
-  const [listings, setListings] = useState(mockListings);
-  const [filteredListings, setFilteredListings] = useState(mockListings);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Apply search filters
-    const query = searchParams.get('q') || '';
-    const price = searchParams.get('price') || '';
-    const duration = searchParams.get('duration') || '';
+    const fetchListings = async () => {
+      try {
+        const params = new URLSearchParams();
+        const query = searchParams.get('q') || '';
+        const price = searchParams.get('price') || '';
+        const duration = searchParams.get('duration') || '';
 
-    let filtered = listings;
+        if (query) params.append('q', query);
+        if (price) params.append('price', price);
+        if (duration) params.append('duration', duration);
 
-    // Filter by search query
-    if (query) {
-      filtered = filtered.filter(listing => 
-        listing.title.toLowerCase().includes(query.toLowerCase()) ||
-        listing.location.toLowerCase().includes(query.toLowerCase())
-      );
-    }
+        const response = await fetch(`/api/listings?${params.toString()}`);
+        if (response.ok) {
+          const data = await response.json();
+          setListings(data.listings || []);
+          setFilteredListings(data.listings || []);
+        } else {
+          console.error('Failed to fetch listings');
+          // Fallback to mock data if API fails
+          setListings([]);
+          setFilteredListings([]);
+        }
+      } catch (error) {
+        console.error('Error fetching listings:', error);
+        setListings([]);
+        setFilteredListings([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    // Filter by price range
-    if (price) {
-      filtered = filtered.filter(listing => {
-        const [min, max] = price.split('-').map(p => p === '+' ? Infinity : parseInt(p));
-        return listing.price >= min && (max === Infinity ? true : listing.price <= max);
-      });
-    }
+    fetchListings();
+  }, [searchParams]);
 
-    // Filter by duration
-    if (duration) {
-      filtered = filtered.filter(listing => {
-        const [min, max] = duration.split('-').map(d => d === '+' ? Infinity : parseInt(d));
-        const listingDuration = parseInt(listing.duration.split(' ')[0]);
-        return listingDuration >= min && (max === Infinity ? true : listingDuration <= max);
-      });
-    }
-
-    setFilteredListings(filtered);
-  }, [searchParams, listings]);
-
-  const handleListingClick = (listingId: number) => {
+  const handleListingClick = (listingId: string) => {
     router.push(`/listings/${listingId}`);
   };
+
+  const getListingImage = (listing: Listing) => {
+    // Use uploaded images if available, otherwise fall back to imageUrl or default
+    if (listing.images && listing.images.length > 0) {
+      return listing.images[0];
+    }
+    if (listing.imageUrl) {
+      return listing.imageUrl;
+    }
+    // Default placeholder image
+    return "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop";
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-blue-900 flex items-center justify-center">
+        <div className="text-xl text-white">Loading listings...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-blue-900">
@@ -126,13 +135,21 @@ export default function ListingsPage() {
         {filteredListings.length === 0 ? (
           <div className="text-center py-12">
             <h2 className="text-2xl font-semibold text-white mb-4">No listings found</h2>
-            <p className="text-blue-200 mb-6">Try adjusting your search criteria</p>
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="px-6 py-3 bg-yellow-500 text-blue-900 rounded-lg hover:bg-yellow-400 transition font-semibold"
-            >
-              Back to Search
-            </button>
+            <p className="text-blue-200 mb-6">Try adjusting your search criteria or create a new listing</p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="px-6 py-3 bg-yellow-500 text-blue-900 rounded-lg hover:bg-yellow-400 transition font-semibold"
+              >
+                Back to Search
+              </button>
+              <button
+                onClick={() => router.push('/create-listing')}
+                className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-semibold"
+              >
+                Create New Listing
+              </button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -144,17 +161,23 @@ export default function ListingsPage() {
               >
                 <div className="relative h-48">
                   <Image
-                    src={listing.image}
+                    src={getListingImage(listing)}
                     alt={listing.title}
                     fill
                     className="object-cover"
                   />
+                  {/* Image count badge if multiple images */}
+                  {listing.images && listing.images.length > 1 && (
+                    <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-sm">
+                      +{listing.images.length - 1} more
+                    </div>
+                  )}
                 </div>
                 <div className="p-6">
                   <h3 className="text-lg font-semibold text-white mb-2">
                     {listing.title}
                   </h3>
-                  <p className="text-blue-200 mb-4">
+                  <p className="text-blue-200 mb-4 line-clamp-2">
                     {listing.description}
                   </p>
                   <div className="flex justify-between items-center">
@@ -168,6 +191,24 @@ export default function ListingsPage() {
                   <p className="text-sm text-blue-300 mt-2">
                     📍 {listing.location}
                   </p>
+                  {/* Show some amenities if available */}
+                  {listing.amenities && listing.amenities.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-1">
+                      {listing.amenities.slice(0, 3).map((amenity, index) => (
+                        <span
+                          key={index}
+                          className="text-xs bg-blue-700 text-blue-200 px-2 py-1 rounded"
+                        >
+                          {amenity}
+                        </span>
+                      ))}
+                      {listing.amenities.length > 3 && (
+                        <span className="text-xs text-blue-300">
+                          +{listing.amenities.length - 3} more
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
