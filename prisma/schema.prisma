@@ -20,4 +20,25 @@ model User {
   email     String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  listings  Listing[] // One-to-many relationship with listings
+}
+
+model Listing {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  price         Int      // Monthly rent in dollars
+  duration      String   // e.g., "6 months", "3 months"
+  location      String
+  imageUrl      String?  // Legacy single image URL
+  images        String?  // JSON string of images array (base64 or URLs)
+  amenities     String   // JSON string of amenities array
+  contactName   String
+  contactEmail  String
+  contactPhone  String
+  availableFrom String   // e.g., "September 1, 2024"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  userId        String   // Foreign key to User
+  user          User     @relation(fields: [userId], references: [id])
 }

@@ -19,11 +19,36 @@ export async function POST(req: NextRequest) {
     // Create user in database if not exists
     const user = await prisma.user.upsert({
       where: { firebaseId },
-      update: {},
+      update: { email },
       create: { firebaseId, email },
     });
     
     console.log('User created/updated:', user);
+    return NextResponse.json({ user });
+  } catch (error) {
+    console.error('API route error:', error);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
+}
+
+// Add GET route to fetch user data
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const firebaseId = searchParams.get('firebaseId');
+    
+    if (!firebaseId) {
+      return NextResponse.json({ error: 'Missing firebaseId' }, { status: 400 });
+    }
+    
+    const user = await prisma.user.findUnique({
+      where: { firebaseId },
+    });
+    
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    
     return NextResponse.json({ user });
   } catch (error) {
     console.error('API route error:', error);
