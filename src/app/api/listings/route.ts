@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '../../../../generated/prisma';
+import { PrismaClient } from '@/generated/prisma';
 
 const prisma = new PrismaClient();
 
@@ -77,6 +77,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get('q') || '';
     const price = searchParams.get('price') || '';
+    const location = searchParams.get('location') || '';
     const duration = searchParams.get('duration') || '';
 
     let whereClause: any = {};
@@ -85,8 +86,13 @@ export async function GET(req: NextRequest) {
     if (query) {
       whereClause.OR = [
         { title: { contains: query, mode: 'insensitive' } },
+        { description: { contains: query, mode: 'insensitive' } },
         { location: { contains: query, mode: 'insensitive' } }
       ];
+    }
+
+    if (location) {
+      whereClause.location = { contains: location, mode: 'insensitive' };
     }
 
     if (price) {
@@ -118,7 +124,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Parse images JSON for each listing
-    const listingsWithParsedImages = listings.map(listing => ({
+    const listingsWithParsedImages = listings.map((listing: any) => ({
       ...listing,
       images: listing.images ? JSON.parse(listing.images) : [],
       amenities: listing.amenities ? JSON.parse(listing.amenities) : []
