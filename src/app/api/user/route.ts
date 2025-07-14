@@ -9,18 +9,18 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     console.log('Request body:', body);
     
-    const { firebaseId, email } = body;
-    if (!firebaseId || !email) {
-      console.log('Missing fields:', { firebaseId, email });
+    const { supabaseId, email } = body;
+    if (!supabaseId || !email) {
+      console.log('Missing fields:', { supabaseId, email });
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
     }
     
-    console.log('Creating user with:', { firebaseId, email });
+    console.log('Creating user with:', { supabaseId, email });
     // Create user in database if not exists
     const user = await prisma.user.upsert({
-      where: { firebaseId },
+      where: { supabaseId },
       update: { email },
-      create: { firebaseId, email },
+      create: { supabaseId, email },
     });
     
     console.log('User created/updated:', user);
@@ -35,14 +35,14 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const firebaseId = searchParams.get('firebaseId');
+    const supabaseId = searchParams.get('supabaseId');
     
-    if (!firebaseId) {
-      return NextResponse.json({ error: 'Missing firebaseId' }, { status: 400 });
+    if (!supabaseId) {
+      return NextResponse.json({ error: 'Missing supabaseId' }, { status: 400 });
     }
     
     const user = await prisma.user.findUnique({
-      where: { firebaseId },
+      where: { supabaseId },
     });
     
     if (!user) {
@@ -60,15 +60,15 @@ export async function GET(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const body = await req.json();
-    const { firebaseId } = body;
+    const { supabaseId } = body;
     
-    if (!firebaseId) {
-      return NextResponse.json({ error: 'Missing firebaseId' }, { status: 400 });
+    if (!supabaseId) {
+      return NextResponse.json({ error: 'Missing supabaseId' }, { status: 400 });
     }
     
     // First get the user to get their ID
     const user = await prisma.user.findUnique({
-      where: { firebaseId }
+      where: { supabaseId }
     });
     
     if (!user) {
@@ -82,7 +82,7 @@ export async function DELETE(req: NextRequest) {
     
     // Delete the user
     await prisma.user.delete({
-      where: { firebaseId }
+      where: { supabaseId }
     });
     
     return NextResponse.json({ message: 'User deleted successfully' });

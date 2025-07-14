@@ -2,8 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
 
 interface UploadedImage {
@@ -37,13 +36,13 @@ export default function CreateListingPage() {
 
   // Check authentication on component mount
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (!firebaseUser) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session?.user) {
         // Redirect to auth page if not logged in
         router.push('/auth');
       }
     });
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, [router]);
 
   // Available amenities options
@@ -164,7 +163,7 @@ export default function CreateListingPage() {
 
     try {
       // Get current user
-      const user = auth.currentUser;
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('You must be logged in to create a listing');
       }
@@ -200,7 +199,7 @@ export default function CreateListingPage() {
         ...formData,
         price: parseInt(formData.price),
         amenities: JSON.stringify(formData.amenities),
-        firebaseId: user.uid,
+        supabaseId: user.id,
         images: imageUrls,
         imageUrl: thumbnailUrl // Use the selected thumbnail as the main image
       };

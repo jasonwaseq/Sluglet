@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { auth } from '@/lib/firebase';
-import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
+import { supabase } from '@/lib/supabase';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -17,15 +16,17 @@ export default function LoginForm() {
     setError('');
     
     try {
-      // Set persistence based on remember me option
-      if (rememberMe) {
-        await setPersistence(auth, browserLocalPersistence); // 30 days
-      } else {
-        await setPersistence(auth, browserSessionPersistence); // Session only
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        throw error;
       }
       
-      await signInWithEmailAndPassword(auth, email, password);
       // Session is handled by onAuthStateChanged in the main page
+      console.log('Login successful:', data.user);
     } catch (err: any) {
       setError(err.message || 'Login failed');
     } finally {

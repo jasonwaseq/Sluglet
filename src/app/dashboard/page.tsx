@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
-import { signOut } from 'firebase/auth';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { supabase } from '@/lib/supabase';
+import { User } from '@supabase/supabase-js';
 import Image from 'next/image';
 import DateRangePicker from '@/components/DateRangePicker';
 
@@ -67,13 +66,13 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setUser(session?.user || null);
       
-      if (firebaseUser) {
+      if (session?.user) {
         try {
           // Fetch user profile to get profile picture
-          const response = await fetch(`/api/user?firebaseId=${firebaseUser.uid}`);
+          const response = await fetch(`/api/user?supabaseId=${session.user.id}`);
           if (response.ok) {
             const data = await response.json();
             setProfilePicture(data.user.profilePicture || null);
@@ -84,12 +83,12 @@ export default function Dashboard() {
       }
     });
 
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleSignOut = async () => {
     try {
-      await signOut(auth);
+      await supabase.auth.signOut();
       router.push('/');
     } catch (error) {
       console.error('Error signing out:', error);

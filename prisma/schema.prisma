@@ -10,13 +10,14 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL")
 }
 
 model User {
   id             String   @id @default(cuid())
-  firebaseId     String   @unique // Firebase UID
+  supabaseId     String   @unique // Supabase UID
   email          String   @unique
   profilePicture String?  // URL or base64 string for profile picture
   description    String?  // User's bio/description

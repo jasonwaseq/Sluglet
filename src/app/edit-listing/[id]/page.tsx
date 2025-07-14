@@ -2,8 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { supabase } from '@/lib/supabase';
+import { User } from '@supabase/supabase-js';
 import Image from 'next/image';
 
 interface UploadedImage {
@@ -64,13 +64,13 @@ export default function EditListingPage() {
 
   // Check authentication and ownership on component mount
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
-      if (!firebaseUser) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null);
+      if (!session?.user) {
         router.push('/auth');
       }
     });
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, [router]);
 
   // Fetch listing data
@@ -97,7 +97,7 @@ export default function EditListingPage() {
         const listing = data.listing;
         
         // Check if current user is the owner
-        const userResponse = await fetch(`/api/user?firebaseId=${user.uid}`);
+        const userResponse = await fetch(`/api/user?supabaseId=${user.id}`);
         if (userResponse.ok) {
           const userData = await userResponse.json();
           if (userData.user.id !== listing.userId) {
@@ -264,8 +264,8 @@ export default function EditListingPage() {
 
     try {
       // Get current user
-      const user = auth.currentUser;
-      if (!user) {
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) {
         throw new Error('You must be logged in to edit a listing');
       }
 
@@ -303,7 +303,7 @@ export default function EditListingPage() {
         price: parseInt(formData.price),
         images: imageUrls,
         imageUrl: thumbnailUrl,
-        firebaseId: user.uid
+        supabaseId: currentUser.id
       };
 
       console.log('Sending update request:', {

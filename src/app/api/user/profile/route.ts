@@ -6,15 +6,15 @@ const prisma = new PrismaClient();
 export async function PUT(req: NextRequest) {
   try {
     const body = await req.json();
-    const { firebaseId, description, profilePicture } = body;
+    const { supabaseId, description, profilePicture } = body;
     
-    if (!firebaseId) {
-      return NextResponse.json({ error: 'Missing firebaseId' }, { status: 400 });
+    if (!supabaseId) {
+      return NextResponse.json({ error: 'Missing supabaseId' }, { status: 400 });
     }
     
     // Update user profile
     const updatedUser = await prisma.user.update({
-      where: { firebaseId },
+      where: { supabaseId },
       data: {
         description: description || null,
         profilePicture: profilePicture || null,

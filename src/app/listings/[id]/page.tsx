@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { supabase } from '@/lib/supabase';
+import { User } from '@supabase/supabase-js';
 
 interface Listing {
   id: string;
@@ -40,11 +40,11 @@ export default function ListingDetailPage() {
   const params = useParams();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null);
     });
 
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -71,7 +71,7 @@ export default function ListingDetailPage() {
         
         // Check if current user is the owner of the listing
         if (user && data.listing.user) {
-          const userResponse = await fetch(`/api/user?firebaseId=${user.uid}`);
+          const userResponse = await fetch(`/api/user?supabaseId=${user.id}`);
           if (userResponse.ok) {
             const userData = await userResponse.json();
             setIsOwner(userData.user.id === data.listing.userId);

@@ -76,7 +76,7 @@ export async function PUT(
       availableFrom,
       availableTo,
       amenities,
-      firebaseId
+      supabaseId
     } = body;
 
     if (!listingId) {
@@ -86,9 +86,9 @@ export async function PUT(
       );
     }
 
-    if (!firebaseId) {
+    if (!supabaseId) {
       return NextResponse.json(
-        { error: 'Firebase ID is required' }, 
+        { error: 'Supabase ID is required' }, 
         { status: 400 }
       );
     }
@@ -110,9 +110,9 @@ export async function PUT(
       );
     }
 
-    // Find the user by firebaseId
+    // Find the user by supabaseId
     const user = await prisma.user.findUnique({
-      where: { firebaseId }
+      where: { supabaseId }
     });
 
     if (!user) {
@@ -194,7 +194,7 @@ export async function DELETE(
   try {
     const listingId = params.id;
     const body = await req.json();
-    const { firebaseId } = body;
+    const { supabaseId } = body;
 
     if (!listingId) {
       return NextResponse.json(
@@ -203,16 +203,16 @@ export async function DELETE(
       );
     }
 
-    if (!firebaseId) {
+    if (!supabaseId) {
       return NextResponse.json(
-        { error: 'Firebase ID is required' }, 
+        { error: 'Supabase ID is required' }, 
         { status: 400 }
       );
     }
 
-    // Find the user by firebaseId
+    // Find the user by supabaseId
     const user = await prisma.user.findUnique({
-      where: { firebaseId }
+      where: { supabaseId }
     });
 
     if (!user) {

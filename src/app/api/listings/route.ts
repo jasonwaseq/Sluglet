@@ -19,12 +19,12 @@ export async function POST(req: NextRequest) {
       availableFrom,
       availableTo,
       amenities,
-      firebaseId
+      supabaseId
     } = body;
 
     // Validate required fields
     if (!title || !description || !price || !location || 
-        !contactName || !contactEmail || !contactPhone || !availableFrom || !availableTo || !firebaseId) {
+        !contactName || !contactEmail || !contactPhone || !availableFrom || !availableTo || !supabaseId) {
       return NextResponse.json(
         { error: 'Missing required fields' }, 
         { status: 400 }
@@ -39,9 +39,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Find user by firebaseId
+    // Find user by supabaseId
     const user = await prisma.user.findUnique({
-      where: { firebaseId }
+      where: { supabaseId }
     });
 
     if (!user) {
@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
     const availableTo = searchParams.get('availableTo') || '';
     const duration = searchParams.get('duration') || '';
     const amenities = searchParams.get('amenities') || '';
-    const firebaseId = searchParams.get('firebaseId') || '';
+    const supabaseId = searchParams.get('supabaseId') || '';
 
     let whereClause: any = {};
     let conditions: any[] = [];
@@ -197,10 +197,10 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Filter by user (firebaseId)
-    if (firebaseId) {
+    // Filter by user (supabaseId)
+    if (supabaseId) {
       const user = await prisma.user.findUnique({
-        where: { firebaseId }
+        where: { supabaseId }
       });
       
       if (user) {

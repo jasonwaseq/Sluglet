@@ -2,15 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
-import { 
-  updatePassword, 
-  deleteUser, 
-  reauthenticateWithCredential, 
-  EmailAuthProvider,
-  signOut 
-} from 'firebase/auth';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { supabase } from '@/lib/supabase';
+import { User } from '@supabase/supabase-js';
 import Image from 'next/image';
 
 interface UserProfile {
@@ -74,13 +67,13 @@ export default function ProfilePage() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setUser(session?.user || null);
       
-      if (firebaseUser) {
+      if (session?.user) {
         try {
           // Fetch user profile from database
-          const response = await fetch(`/api/user?firebaseId=${firebaseUser.uid}`);
+          const response = await fetch(`/api/user?supabaseId=${session.user.id}`);
           if (response.ok) {
             const data = await response.json();
             setProfile(data.user);
@@ -89,7 +82,7 @@ export default function ProfilePage() {
           }
           
           // Fetch user listings
-          await fetchUserListings(firebaseUser.uid);
+          await fetchUserListings(session.user.id);
         } catch (error) {
           console.error('Error fetching profile:', error);
           setError('Failed to load profile');
@@ -101,13 +94,13 @@ export default function ProfilePage() {
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, [router]);
 
-  const fetchUserListings = async (firebaseId: string) => {
+  const fetchUserListings = async (userId: string) => {
     setLoadingListings(true);
     try {
-      const response = await fetch(`/api/listings?firebaseId=${firebaseId}`);
+      const response = await fetch(`/api/listings?supabaseId=${userId}`);
       if (response.ok) {
         const data = await response.json();
         setUserListings(data.listings || []);
@@ -130,7 +123,7 @@ export default function ProfilePage() {
       const response = await fetch(`/api/listings/${listingId}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firebaseId: user.uid })
+        body: JSON.stringify({ supabaseId: user.id })
       });
 
       if (response.ok) {
@@ -171,7 +164,7 @@ export default function ProfilePage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          firebaseId: user.uid,
+          supabaseId: user.id,
           description,
           profilePicture
         })
@@ -214,12 +207,14 @@ export default function ProfilePage() {
     setError('');
 
     try {
-      // Re-authenticate user
-      const credential = EmailAuthProvider.credential(user.email!, currentPassword);
-      await reauthenticateWithCredential(user, credential);
+      // Update password with Supabase
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
       
-      // Update password
-      await updatePassword(user, newPassword);
+      if (error) {
+        throw error;
+      }
       
       setSuccess('Password changed successfully!');
       setShowPasswordForm(false);
@@ -241,26 +236,26 @@ export default function ProfilePage() {
     setError('');
 
     try {
-      // Re-authenticate user
-      const credential = EmailAuthProvider.credential(user.email!, deletePassword);
-      await reauthenticateWithCredential(user, credential);
-      
       // Delete user from database first
       const response = await fetch('/api/user', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firebaseId: user.uid })
+        body: JSON.stringify({ supabaseId: user.id })
       });
 
       if (!response.ok) {
         throw new Error('Failed to delete user data');
       }
       
-      // Delete Firebase user
-      await deleteUser(user);
+      // Delete Supabase user
+      const { error } = await supabase.auth.admin.deleteUser(user.id);
+      
+      if (error) {
+        throw error;
+      }
       
       // Sign out and redirect
-      await signOut(auth);
+      await supabase.auth.signOut();
       router.push('/');
     } catch (error: any) {
       setError(error.message || 'Failed to delete account');

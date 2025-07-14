@@ -5,10 +5,10 @@ const prisma = new PrismaClient();
 async function main() {
   // Create a test user
   const user = await prisma.user.upsert({
-    where: { firebaseId: 'test-user-123' },
+    where: { supabaseId: 'test-user-123' },
     update: {},
     create: {
-      firebaseId: 'test-user-123',
+      supabaseId: 'test-user-123',
       email: 'test@example.com',
     },
   });

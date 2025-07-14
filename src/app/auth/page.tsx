@@ -5,8 +5,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import LoginForm from '@/components/LoginForm';
 import SignupForm from '@/components/SignupForm';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { supabase } from '@/lib/supabase';
+import { User } from '@supabase/supabase-js';
 
 export default function AuthPage() {
   const [showSignup, setShowSignup] = useState(false);
@@ -15,16 +15,16 @@ export default function AuthPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      setUser(firebaseUser);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user || null);
       setLoading(false);
       
       // Redirect to dashboard if user is logged in
-      if (firebaseUser) {
+      if (session?.user) {
         router.push('/dashboard');
       }
     });
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, [router]);
 
   // Show loading while checking auth state

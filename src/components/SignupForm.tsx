@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { auth } from "@/lib/firebase";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { supabase } from "@/lib/supabase";
 
 export default function SignupForm() {
   const [email, setEmail] = useState("");
@@ -42,6 +41,14 @@ export default function SignupForm() {
     setError("");
     setSuccess("");
 
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address");
+      setLoading(false);
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       setLoading(false);
@@ -55,20 +62,27 @@ export default function SignupForm() {
     }
 
     try {
-      console.log('Starting Firebase signup...');
-      // Firebase signup
-      const userCred = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCred.user;
-      console.log('Firebase user created:', user.uid);
+      console.log('Starting Supabase signup...');
+      // Supabase signup
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
       
-      // Call API to store user in Prisma (only Firebase UID and email)
+      if (error) {
+        throw error;
+      }
+      
+      console.log('Supabase user created:', data.user?.id);
+      
+      // Call API to store user in Prisma (only Supabase UID and email)
       console.log('Calling API to save user in database...');
       const res = await fetch("/api/user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          firebaseId: user.uid,
-          email: user.email,
+          supabaseId: data.user?.id,
+          email: data.user?.email,
         }),
       });
       
@@ -81,7 +95,7 @@ export default function SignupForm() {
       
       const result = await res.json();
       console.log('API success:', result);
-      setSuccess("Signup successful! You can now log in.");
+      setSuccess("Signup successful! Please check your email to verify your account.");
       setEmail("");
       setPassword("");
       setConfirmPassword("");
