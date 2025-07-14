@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import Image from 'next/image';
 
 interface UploadedImage {
   id: string;
   file: File;
   preview: string;
+  isThumbnail?: boolean;
 }
 
 export default function CreateListingPage() {
@@ -17,13 +18,12 @@ export default function CreateListingPage() {
     title: '',
     description: '',
     price: '',
-    duration: '',
     location: '',
-    imageUrl: '',
     contactName: '',
     contactEmail: '',
     contactPhone: '',
     availableFrom: '',
+    availableTo: '',
     amenities: [] as string[]
   });
   
@@ -35,22 +35,31 @@ export default function CreateListingPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
+  // Check authentication on component mount
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (!firebaseUser) {
+        // Redirect to auth page if not logged in
+        router.push('/auth');
+      }
+    });
+    return () => unsubscribe();
+  }, [router]);
+
   // Available amenities options
   const availableAmenities = [
     'Furnished',
     'WiFi',
     'Utilities Included',
-    'Parking',
+    'On-Street Parking',
+    'Driveway Parking',
+    'Garage Parking',
     'Gym Access',
-    'Laundry',
-    'Study Room',
-    'Rooftop Terrace',
-    'Fitness Center',
-    'Concierge',
+    'In-Unit Laundry',
+    'Shared Laundry',
     'Air Conditioning',
     'Dishwasher',
-    'Balcony',
-    'Storage'
+    'Balcony'
   ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -117,6 +126,13 @@ export default function CreateListingPage() {
     setUploadedImages(prev => prev.filter(img => img.id !== id));
   };
 
+  const setThumbnail = (id: string) => {
+    setUploadedImages(prev => prev.map(img => ({
+      ...img,
+      isThumbnail: img.id === id
+    })));
+  };
+
   const uploadImages = async (): Promise<string[]> => {
     if (uploadedImages.length === 0) return [];
 
@@ -155,13 +171,29 @@ export default function CreateListingPage() {
 
       // Validate required fields
       if (!formData.title || !formData.description || !formData.price || 
-          !formData.duration || !formData.location || !formData.contactName ||
-          !formData.contactEmail || !formData.contactPhone || !formData.availableFrom) {
+          !formData.location || !formData.contactName ||
+          !formData.contactEmail || !formData.contactPhone || !formData.availableFrom || !formData.availableTo) {
         throw new Error('Please fill in all required fields');
       }
 
-      // Upload images
+      // Validate date range
+      if (new Date(formData.availableFrom) >= new Date(formData.availableTo)) {
+        throw new Error('Available To date must be after Available From date');
+      }
+
+      // Validate that at least one image is uploaded and a thumbnail is selected
+      if (uploadedImages.length === 0) {
+        throw new Error('Please upload at least one photo');
+      }
+
+      if (!uploadedImages.some(img => img.isThumbnail)) {
+        throw new Error('Please select a thumbnail image by clicking on one of the uploaded photos');
+      }
+
+      // Upload images and get thumbnail
       const imageUrls = await uploadImages();
+      const thumbnailIndex = uploadedImages.findIndex(img => img.isThumbnail);
+      const thumbnailUrl = imageUrls[thumbnailIndex];
 
       // Create listing data
       const listingData = {
@@ -169,7 +201,8 @@ export default function CreateListingPage() {
         price: parseInt(formData.price),
         amenities: JSON.stringify(formData.amenities),
         firebaseId: user.uid,
-        images: imageUrls // Add images to the listing data
+        images: imageUrls,
+        imageUrl: thumbnailUrl // Use the selected thumbnail as the main image
       };
 
       // Submit to API
@@ -345,16 +378,31 @@ export default function CreateListingPage() {
               {/* Image Previews */}
               {uploadedImages.length > 0 && (
                 <div className="mt-6">
-                  <h3 className="text-lg font-medium text-white mb-4">Uploaded Photos ({uploadedImages.length})</h3>
+                  <h3 className="text-lg font-medium text-white mb-4">
+                    Uploaded Photos ({uploadedImages.length})
+                    <span className="text-sm text-blue-300 ml-2">Click on a photo to set as thumbnail</span>
+                  </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {uploadedImages.map((image) => (
                       <div key={image.id} className="relative group">
-                        <div className="aspect-square rounded-lg overflow-hidden bg-blue-700">
+                        <div 
+                          className={`aspect-square rounded-lg overflow-hidden bg-blue-700 cursor-pointer border-2 transition-all ${
+                            image.isThumbnail 
+                              ? 'border-yellow-400 ring-2 ring-yellow-400' 
+                              : 'border-transparent hover:border-blue-400'
+                          }`}
+                          onClick={() => setThumbnail(image.id)}
+                        >
                           <img
                             src={image.preview}
                             alt="Preview"
                             className="w-full h-full object-cover"
                           />
+                          {image.isThumbnail && (
+                            <div className="absolute top-2 left-2 bg-yellow-400 text-blue-900 px-2 py-1 rounded-full text-xs font-semibold">
+                              Thumbnail
+                            </div>
+                          )}
                         </div>
                         <button
                           type="button"
@@ -366,46 +414,30 @@ export default function CreateListingPage() {
                       </div>
                     ))}
                   </div>
+                  {uploadedImages.length > 0 && !uploadedImages.some(img => img.isThumbnail) && (
+                    <p className="text-yellow-400 text-sm mt-2">
+                      ⚠️ Please select a thumbnail image by clicking on one of the photos above
+                    </p>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* Pricing and Duration */}
+            {/* Pricing */}
             <div>
-              <h2 className="text-xl font-semibold text-white mb-4">Pricing & Duration</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-blue-200 mb-2">Monthly Rent ($) *</label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300"
-                    placeholder="1200"
-                    min="0"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-blue-200 mb-2">Duration *</label>
-                  <select
-                    name="duration"
-                    value={formData.duration}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white"
-                    required
-                  >
-                    <option value="">Select duration</option>
-                    <option value="1 month">1 month</option>
-                    <option value="2 months">2 months</option>
-                    <option value="3 months">3 months</option>
-                    <option value="6 months">6 months</option>
-                    <option value="12 months">12 months</option>
-                    <option value="Flexible">Flexible</option>
-                  </select>
-                </div>
+              <h2 className="text-xl font-semibold text-white mb-4">Pricing</h2>
+              <div>
+                <label className="block text-blue-200 mb-2">Monthly Rent ($) *</label>
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300"
+                  placeholder="1200"
+                  min="0"
+                  required
+                />
               </div>
             </div>
 
@@ -456,30 +488,36 @@ export default function CreateListingPage() {
 
             {/* Availability */}
             <div>
-              <label className="block text-blue-200 mb-2">Available From *</label>
-              <input
-                type="text"
-                name="availableFrom"
-                value={formData.availableFrom}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300"
-                placeholder="e.g., September 1, 2024"
-                required
-              />
+              <h2 className="text-xl font-semibold text-white mb-4">Availability</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-blue-200 mb-2">Available From *</label>
+                  <input
+                    type="date"
+                    name="availableFrom"
+                    value={formData.availableFrom}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-blue-200 mb-2">Available To *</label>
+                  <input
+                    type="date"
+                    name="availableTo"
+                    value={formData.availableTo}
+                    onChange={handleInputChange}
+                    min={formData.availableFrom}
+                    className="w-full px-4 py-2 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white"
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Image URL (Legacy) */}
-            <div>
-              <label className="block text-blue-200 mb-2">Image URL (Optional - Legacy)</label>
-              <input
-                type="url"
-                name="imageUrl"
-                value={formData.imageUrl}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300"
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
+
 
             {/* Amenities */}
             <div>

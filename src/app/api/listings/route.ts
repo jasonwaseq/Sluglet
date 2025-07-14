@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '../../../../generated/prisma';
+import { PrismaClient } from '../../../../src/generated/prisma';
 
 const prisma = new PrismaClient();
 
@@ -10,7 +10,6 @@ export async function POST(req: NextRequest) {
       title,
       description,
       price,
-      duration,
       location,
       imageUrl,
       images,
@@ -18,15 +17,24 @@ export async function POST(req: NextRequest) {
       contactEmail,
       contactPhone,
       availableFrom,
+      availableTo,
       amenities,
       firebaseId
     } = body;
 
     // Validate required fields
-    if (!title || !description || !price || !duration || !location || 
-        !contactName || !contactEmail || !contactPhone || !availableFrom || !firebaseId) {
+    if (!title || !description || !price || !location || 
+        !contactName || !contactEmail || !contactPhone || !availableFrom || !availableTo || !firebaseId) {
       return NextResponse.json(
         { error: 'Missing required fields' }, 
+        { status: 400 }
+      );
+    }
+
+    // Validate date range
+    if (new Date(availableFrom) >= new Date(availableTo)) {
+      return NextResponse.json(
+        { error: 'Available To date must be after Available From date' }, 
         { status: 400 }
       );
     }
@@ -49,7 +57,6 @@ export async function POST(req: NextRequest) {
         title,
         description,
         price: parseInt(price),
-        duration,
         location,
         imageUrl: imageUrl || null,
         images: images ? JSON.stringify(images) : null, // Store images as JSON string
@@ -58,6 +65,7 @@ export async function POST(req: NextRequest) {
         contactEmail,
         contactPhone,
         availableFrom,
+        availableTo,
         userId: user.id
       }
     });
@@ -76,33 +84,142 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get('q') || '';
+    const location = searchParams.get('location') || '';
     const price = searchParams.get('price') || '';
+    const availableFrom = searchParams.get('availableFrom') || '';
+    const availableTo = searchParams.get('availableTo') || '';
     const duration = searchParams.get('duration') || '';
+    const amenities = searchParams.get('amenities') || '';
+    const firebaseId = searchParams.get('firebaseId') || '';
 
     let whereClause: any = {};
+    let conditions: any[] = [];
+    let searchStartDate: string | undefined;
+    let searchEndDate: string | undefined;
 
     // Add search filters
     if (query) {
-      whereClause.OR = [
-        { title: { contains: query, mode: 'insensitive' } },
-        { location: { contains: query, mode: 'insensitive' } }
-      ];
+      conditions.push({
+        OR: [
+          { title: { contains: query } },
+          { location: { contains: query } }
+        ]
+      });
+    }
+
+    // Filter by location
+    if (location) {
+      console.log('Location filtering:', { location });
+      conditions.push({
+        location: { contains: location }
+      });
+      console.log('Location condition added');
+    }
+
+    // Filter by amenities
+    if (amenities) {
+      const amenityList = amenities.split(',');
+      console.log('Amenity filtering:', { amenities: amenityList });
+      
+      // For each selected amenity, check if it's contained in the listing's amenities
+      amenityList.forEach(amenity => {
+        conditions.push({
+          amenities: { contains: amenity }
+        });
+      });
+      console.log('Amenity conditions added');
     }
 
     if (price) {
       const [min, max] = price.split('-').map(p => p === '+' ? undefined : parseInt(p));
-      whereClause.price = {
-        gte: min,
-        ...(max && { lte: max })
-      };
+      conditions.push({
+        price: {
+          gte: min,
+          ...(max && { lte: max })
+        }
+      });
     }
 
+    // Filter by duration (date range overlap)
     if (duration) {
-      const [min, max] = duration.split('-').map(d => d === '+' ? undefined : parseInt(d));
-      // This is a simplified filter - in a real app you'd want to parse duration strings
-      // For now, we'll just store the duration as a string
+      // Handle duration format: "YYYY-MM-DD-YYYY-MM-DD" (e.g., "2025-10-13-2025-11-19")
+      const parts = duration.split('-');
+      
+      if (parts.length === 6) {
+        // Format: "YYYY-MM-DD-YYYY-MM-DD"
+        searchStartDate = `${parts[0]}-${parts[1]}-${parts[2]}`;
+        searchEndDate = `${parts[3]}-${parts[4]}-${parts[5]}`;
+      } else if (parts.length === 2) {
+        // Format: "start-end" (legacy)
+        [searchStartDate, searchEndDate] = parts;
+      }
+      
+      if (searchStartDate && searchEndDate) {
+        console.log('Date filtering:', { start: searchStartDate, end: searchEndDate, duration });
+        console.log('Search period:', { startDate: searchStartDate, endDate: searchEndDate });
+        
+        // Since dates are stored as strings in format "YYYY-MM-DD", string comparison works correctly
+        // Show listings that are available for the ENTIRE search period
+        // A listing must be available from before or on the search start date
+        // AND available until after or on the search end date
+        conditions.push({ 
+          availableFrom: { lte: searchStartDate }  // Listing starts before or on search start date
+        });
+        conditions.push({ 
+          availableTo: { gte: searchEndDate }      // Listing ends after or on search end date
+        });
+        
+        // Additional validation: ensure the dates are in the correct format
+        console.log('Date validation:');
+        console.log(`  Search start: ${searchStartDate} (format: ${/^\d{4}-\d{2}-\d{2}$/.test(searchStartDate) ? 'valid' : 'invalid'})`);
+        console.log(`  Search end: ${searchEndDate} (format: ${/^\d{4}-\d{2}-\d{2}$/.test(searchEndDate) ? 'valid' : 'invalid'})`);
+        
+        console.log('Date conditions added:', { 
+          availableFrom: { lte: searchStartDate }, 
+          availableTo: { gte: searchEndDate } 
+        });
+      }
+    } else if (availableFrom || availableTo) {
+      // Legacy support for availableFrom/availableTo
+      if (availableFrom) {
+        conditions.push({
+          availableTo: {
+            gte: availableFrom  // Listing ends after or on the specified start date
+          }
+        });
+      }
+      if (availableTo) {
+        conditions.push({
+          availableFrom: {
+            lte: availableTo    // Listing starts before or on the specified end date
+          }
+        });
+      }
     }
 
+    // Filter by user (firebaseId)
+    if (firebaseId) {
+      const user = await prisma.user.findUnique({
+        where: { firebaseId }
+      });
+      
+      if (user) {
+        conditions.push({ userId: user.id });
+      } else {
+        return NextResponse.json({ listings: [] });
+      }
+    }
+
+    // Construct final whereClause
+    if (conditions.length > 0) {
+      whereClause.AND = conditions;
+    } else {
+      // If no conditions, return all listings
+      whereClause = {};
+    }
+
+    console.log('Final whereClause:', JSON.stringify(whereClause, null, 2));
+    
     const listings = await prisma.listing.findMany({
       where: whereClause,
       include: {
@@ -116,9 +233,79 @@ export async function GET(req: NextRequest) {
         createdAt: 'desc'
       }
     });
+    
+    console.log(`Found ${listings.length} listings`);
+    
+    // Post-process listings to ensure date filtering is correct
+    let finalListings = listings;
+    if (duration || availableFrom || availableTo) {
+      console.log('=== POST-PROCESSING DATE FILTER ===');
+      const searchStartStr = searchStartDate || availableFrom;
+      const searchEndStr = searchEndDate || availableTo;
+      
+      finalListings = listings.filter(listing => {
+        const listingStartStr = listing.availableFrom;
+        const listingEndStr = listing.availableTo;
+        
+        // String comparison for dates in YYYY-MM-DD format
+        const shouldInclude = listingStartStr <= searchStartStr && listingEndStr >= searchEndStr;
+        
+        console.log(`Listing: ${listing.title}`);
+        console.log(`  Available: ${listingStartStr} to ${listingEndStr}`);
+        console.log(`  Search period: ${searchStartStr} to ${searchEndStr}`);
+        console.log(`  Should include: ${shouldInclude}`);
+        console.log(`    Start check: ${listingStartStr} <= ${searchStartStr} = ${listingStartStr <= searchStartStr}`);
+        console.log(`    End check: ${listingEndStr} >= ${searchEndStr} = ${listingEndStr >= searchEndStr}`);
+        console.log('---');
+        
+        return shouldInclude;
+      });
+      
+      console.log(`After post-processing: ${finalListings.length} listings remain`);
+    }
+    
+    // Log all listings with their date ranges for debugging
+    if (duration || availableFrom || availableTo) {
+      console.log('=== FINAL DATE FILTERED LISTINGS ===');
+      finalListings.forEach(listing => {
+        console.log(`Listing: ${listing.title}`);
+        console.log(`  Available: ${listing.availableFrom} to ${listing.availableTo}`);
+        console.log(`  Search period: ${searchStartDate || availableFrom} to ${searchEndDate || availableTo}`);
+        
+        // Check if the listing should actually be included using string comparison
+        const listingStartStr = listing.availableFrom;
+        const listingEndStr = listing.availableTo;
+        const searchStartStr = searchStartDate || availableFrom;
+        const searchEndStr = searchEndDate || availableTo;
+        
+        const shouldInclude = listingStartStr <= searchStartStr && listingEndStr >= searchEndStr;
+        console.log(`  String comparison - Should include: ${shouldInclude}`);
+        console.log(`    Listing start (${listingStartStr}) <= Search start (${searchStartStr}): ${listingStartStr <= searchStartStr}`);
+        console.log(`    Listing end (${listingEndStr}) >= Search end (${searchEndStr}): ${listingEndStr >= searchEndStr}`);
+        
+        // Also check with Date objects for comparison
+        const listingStart = new Date(listing.availableFrom);
+        const listingEnd = new Date(listing.availableTo);
+        const searchStart = new Date(searchStartStr);
+        const searchEnd = new Date(searchEndStr);
+        
+        const shouldIncludeDate = listingStart <= searchStart && listingEnd >= searchEnd;
+        console.log(`  Date comparison - Should include: ${shouldIncludeDate}`);
+        console.log('---');
+      });
+    }
+    
+    if (location) {
+      console.log('Listings with location filter:');
+      listings.forEach(listing => {
+        console.log(`Listing: ${listing.title}, Location: ${listing.location}`);
+      });
+    }
+    
+
 
     // Parse images JSON for each listing
-    const listingsWithParsedImages = listings.map(listing => ({
+    const listingsWithParsedImages = finalListings.map((listing: any) => ({
       ...listing,
       images: listing.images ? JSON.parse(listing.images) : [],
       amenities: listing.amenities ? JSON.parse(listing.amenities) : []

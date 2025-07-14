@@ -54,4 +54,40 @@ export async function GET(req: NextRequest) {
     console.error('API route error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
+}
+
+// Add DELETE route to delete user account
+export async function DELETE(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { firebaseId } = body;
+    
+    if (!firebaseId) {
+      return NextResponse.json({ error: 'Missing firebaseId' }, { status: 400 });
+    }
+    
+    // First get the user to get their ID
+    const user = await prisma.user.findUnique({
+      where: { firebaseId }
+    });
+    
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+    
+    // Delete all user's listings first (due to foreign key constraint)
+    await prisma.listing.deleteMany({
+      where: { userId: user.id }
+    });
+    
+    // Delete the user
+    await prisma.user.delete({
+      where: { firebaseId }
+    });
+    
+    return NextResponse.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
+  }
 } 

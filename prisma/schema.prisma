@@ -15,12 +15,14 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  firebaseId String  @unique // Firebase UID
-  email     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  listings  Listing[] // One-to-many relationship with listings
+  id             String   @id @default(cuid())
+  firebaseId     String   @unique // Firebase UID
+  email          String   @unique
+  profilePicture String?  // URL or base64 string for profile picture
+  description    String?  // User's bio/description
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  listings       Listing[] // One-to-many relationship with listings
 }
 
 model Listing {
@@ -28,7 +30,6 @@ model Listing {
   title         String
   description   String
   price         Int      // Monthly rent in dollars
-  duration      String   // e.g., "6 months", "3 months"
   location      String
   imageUrl      String?  // Legacy single image URL
   images        String?  // JSON string of images array (base64 or URLs)
@@ -36,7 +37,8 @@ model Listing {
   contactName   String
   contactEmail  String
   contactPhone  String
-  availableFrom String   // e.g., "September 1, 2024"
+  availableFrom String   // e.g., "2024-09-01"
+  availableTo   String   // e.g., "2024-12-31"
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   userId        String   // Foreign key to User

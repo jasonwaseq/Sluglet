@@ -3,97 +3,179 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
-// Mock data - replace with real API calls
-const mockListings = [
-  {
-    id: 1,
-    title: "Cozy Studio in Downtown",
-    price: 1200,
-    duration: "6 months",
-    location: "Downtown",
-    description: "Beautiful studio apartment with great amenities. This fully furnished studio is perfect for students or young professionals. Features include hardwood floors, modern appliances, and a private balcony with city views.",
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop",
-    amenities: ["Furnished", "WiFi", "Utilities Included", "Parking", "Gym Access"],
-    contactInfo: {
-      name: "Sarah Johnson",
-      email: "sarah.johnson@email.com",
-      phone: "(555) 123-4567"
-    },
-    availableFrom: "September 1, 2024"
-  },
-  {
-    id: 2,
-    title: "2BR Apartment Near Campus",
-    price: 800,
-    duration: "3 months",
-    location: "University District",
-    description: "Perfect for students, fully furnished 2-bedroom apartment within walking distance to campus. Quiet neighborhood with easy access to public transportation.",
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop",
-    amenities: ["Furnished", "WiFi", "Utilities Included", "Laundry", "Study Room"],
-    contactInfo: {
-      name: "Mike Chen",
-      email: "mike.chen@email.com",
-      phone: "(555) 987-6543"
-    },
-    availableFrom: "August 15, 2024"
-  },
-  {
-    id: 3,
-    title: "Luxury 1BR with City View",
-    price: 1500,
-    duration: "12 months",
-    location: "Midtown",
-    description: "High-end apartment with amazing city views. This luxury 1-bedroom apartment features premium finishes, floor-to-ceiling windows, and access to building amenities including a rooftop terrace and fitness center.",
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop",
-    amenities: ["Furnished", "WiFi", "Utilities Included", "Rooftop Terrace", "Fitness Center", "Concierge"],
-    contactInfo: {
-      name: "Emily Rodriguez",
-      email: "emily.rodriguez@email.com",
-      phone: "(555) 456-7890"
-    },
-    availableFrom: "October 1, 2024"
-  }
-];
+interface Listing {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  location: string;
+  imageUrl?: string;
+  images?: string[];
+  amenities: string[];
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  availableFrom: string;
+  availableTo: string;
+  createdAt: string;
+  user: {
+    email: string;
+    profilePicture?: string;
+    description?: string;
+  };
+}
 
 export default function ListingDetailPage() {
-  const [listing, setListing] = useState<any>(null);
+  const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isOwner, setIsOwner] = useState(false);
   const router = useRouter();
   const params = useParams();
 
   useEffect(() => {
-    // Simulate API call
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
     const fetchListing = async () => {
+      if (!params.id) return;
+      
       setLoading(true);
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      setError('');
       
-      const listingId = parseInt(params.id as string);
-      const foundListing = mockListings.find(l => l.id === listingId);
-      
-      if (foundListing) {
-        setListing(foundListing);
+      try {
+        const response = await fetch(`/api/listings/${params.id}`);
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            setError('Listing not found');
+          } else {
+            setError('Failed to load listing');
+          }
+          return;
+        }
+        
+        const data = await response.json();
+        setListing(data.listing);
+        
+        // Check if current user is the owner of the listing
+        if (user && data.listing.user) {
+          const userResponse = await fetch(`/api/user?firebaseId=${user.uid}`);
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            setIsOwner(userData.user.id === data.listing.userId);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching listing:', error);
+        setError('Failed to load listing');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchListing();
-  }, [params.id]);
+  }, [params.id, user]);
+
+  const formatDateRange = (from: string, to: string) => {
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+    
+    const fromFormatted = fromDate.toLocaleDateString('en-US', { 
+      month: 'long', 
+      day: 'numeric',
+      year: 'numeric'
+    });
+    const toFormatted = toDate.toLocaleDateString('en-US', { 
+      month: 'long', 
+      day: 'numeric',
+      year: 'numeric'
+    });
+    
+    return `${fromFormatted} - ${toFormatted}`;
+  };
+
+  const getListingImages = () => {
+    if (listing?.images && listing.images.length > 0) {
+      return listing.images;
+    }
+    if (listing?.imageUrl) {
+      return [listing.imageUrl];
+    }
+    // Default placeholder image
+    return ["https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop"];
+  };
+
+  const nextImage = () => {
+    const images = getListingImages();
+    setCurrentImageIndex((prev) => (prev + 1) % images.length);
+  };
+
+  const prevImage = () => {
+    const images = getListingImages();
+    setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+  };
+
+  const openFullscreen = () => {
+    setIsFullscreen(true);
+  };
+
+  const closeFullscreen = () => {
+    setIsFullscreen(false);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (!isFullscreen) return;
+    
+    if (e.key === 'Escape') {
+      closeFullscreen();
+    } else if (e.key === 'ArrowLeft') {
+      prevImage();
+    } else if (e.key === 'ArrowRight') {
+      nextImage();
+    }
+  };
+
+  useEffect(() => {
+    if (isFullscreen) {
+      document.addEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isFullscreen]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-blue-900 flex items-center justify-center">
-        <div className="text-xl text-white">Loading...</div>
+        <div className="text-xl text-white">Loading listing...</div>
       </div>
     );
   }
 
-  if (!listing) {
+  if (error || !listing) {
     return (
       <div className="min-h-screen bg-blue-900 flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-semibold text-white mb-4">Listing not found</h1>
+          <h1 className="text-2xl font-semibold text-white mb-4">
+            {error || 'Listing not found'}
+          </h1>
           <button
             onClick={() => router.push('/listings')}
             className="px-6 py-3 bg-yellow-500 text-blue-900 rounded-lg hover:bg-yellow-400 transition font-semibold"
@@ -104,6 +186,8 @@ export default function ListingDetailPage() {
       </div>
     );
   }
+
+  const images = getListingImages();
 
   return (
     <div className="min-h-screen bg-blue-900">
@@ -127,40 +211,119 @@ export default function ListingDetailPage() {
               </button>
             </div>
 
-            {/* Back to Listings */}
-            <button
-              onClick={() => router.push('/listings')}
-              className="px-4 py-2 text-blue-200 hover:text-white transition"
-            >
-              ← Back to Listings
-            </button>
+            {/* Action Buttons */}
+            <div className="flex items-center gap-4">
+              {isOwner && (
+                <button
+                  onClick={() => router.push(`/edit-listing/${params.id}`)}
+                  className="px-4 py-2 bg-yellow-500 text-blue-900 rounded-lg hover:bg-yellow-400 transition font-semibold"
+                >
+                  Edit Listing
+                </button>
+              )}
+              <button
+                onClick={() => router.push('/listings')}
+                className="px-4 py-2 text-blue-200 hover:text-white transition"
+              >
+                ← Back to Listings
+              </button>
+            </div>
           </div>
         </div>
       </nav>
 
       {/* Listing Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-blue-800 rounded-lg shadow-lg overflow-hidden border border-blue-700">
-          {/* Image */}
-          <div className="relative h-96">
+          {/* Image Gallery */}
+          <div className="relative h-96 md:h-[500px] bg-blue-900">
             <Image
-              src={listing.image}
+              src={images[currentImageIndex]}
               alt={listing.title}
               fill
-              className="object-cover"
+              className="object-contain cursor-pointer"
+              onClick={openFullscreen}
             />
+            
+            {/* Image Navigation */}
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={prevImage}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={nextImage}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+                
+                {/* Image Counter */}
+                <div className="absolute bottom-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                  {currentImageIndex + 1} / {images.length}
+                </div>
+              </>
+            )}
+
+            {/* Fullscreen Button */}
+            <button
+              onClick={openFullscreen}
+              className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition"
+              title="View fullscreen"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+            </button>
           </div>
+
+          {/* Thumbnail Gallery */}
+          {images.length > 1 && (
+            <div className="p-4 bg-blue-700 border-b border-blue-600">
+              <div className="flex gap-2 overflow-x-auto">
+                {images.map((image, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${
+                      index === currentImageIndex 
+                        ? 'border-yellow-400' 
+                        : 'border-transparent hover:border-blue-400'
+                    }`}
+                  >
+                    <Image
+                      src={image}
+                      alt={`${listing.title} - Image ${index + 1}`}
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Content */}
           <div className="p-8">
             {/* Header */}
-            <div className="flex justify-between items-start mb-6">
-              <div>
+            <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6 gap-4">
+              <div className="flex-1">
                 <h1 className="text-3xl font-bold text-white mb-2">
                   {listing.title}
                 </h1>
-                <p className="text-lg text-blue-200">
+                <p className="text-lg text-blue-200 mb-2">
                   📍 {listing.location}
+                </p>
+                <p className="text-blue-300">
+                  Listed by {listing.contactName}
                 </p>
               </div>
               <div className="text-right">
@@ -168,7 +331,7 @@ export default function ListingDetailPage() {
                   ${listing.price}/month
                 </div>
                 <div className="text-blue-300">
-                  {listing.duration}
+                  {formatDateRange(listing.availableFrom, listing.availableTo)}
                 </div>
               </div>
             </div>
@@ -182,18 +345,22 @@ export default function ListingDetailPage() {
             </div>
 
             {/* Details Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
               {/* Amenities */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4">Amenities</h3>
-                <ul className="space-y-2">
-                  {listing.amenities.map((amenity: string, index: number) => (
-                    <li key={index} className="flex items-center text-blue-200">
-                      <span className="text-yellow-400 mr-2">✓</span>
-                      {amenity}
-                    </li>
-                  ))}
-                </ul>
+                {listing.amenities && listing.amenities.length > 0 ? (
+                  <ul className="space-y-2">
+                    {listing.amenities.map((amenity: string, index: number) => (
+                      <li key={index} className="flex items-center text-blue-200">
+                        <span className="text-yellow-400 mr-2">✓</span>
+                        {amenity}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-blue-300">No amenities listed</p>
+                )}
               </div>
 
               {/* Contact Information */}
@@ -202,36 +369,112 @@ export default function ListingDetailPage() {
                 <div className="space-y-3">
                   <div>
                     <span className="font-medium text-blue-200">Name:</span>
-                    <p className="text-blue-300">{listing.contactInfo.name}</p>
+                    <p className="text-blue-300">{listing.contactName}</p>
                   </div>
                   <div>
                     <span className="font-medium text-blue-200">Email:</span>
-                    <p className="text-blue-300">{listing.contactInfo.email}</p>
+                    <p className="text-blue-300">{listing.contactEmail}</p>
                   </div>
                   <div>
                     <span className="font-medium text-blue-200">Phone:</span>
-                    <p className="text-blue-300">{listing.contactInfo.phone}</p>
+                    <p className="text-blue-300">{listing.contactPhone}</p>
                   </div>
                   <div>
-                    <span className="font-medium text-blue-200">Available From:</span>
-                    <p className="text-blue-300">{listing.availableFrom}</p>
+                    <span className="font-medium text-blue-200">Available:</span>
+                    <p className="text-blue-300">{formatDateRange(listing.availableFrom, listing.availableTo)}</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-4">
-              <button className="flex-1 bg-yellow-500 text-blue-900 py-3 px-6 rounded-lg hover:bg-yellow-400 transition font-semibold">
-                Contact Owner
-              </button>
-              <button className="flex-1 bg-green-500 text-white py-3 px-6 rounded-lg hover:bg-green-600 transition font-semibold">
-                Apply Now
-              </button>
+            {/* Additional Details */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-white mb-4">Additional Details</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-blue-700 p-4 rounded-lg">
+                  <span className="font-medium text-blue-200">Monthly Rent</span>
+                  <p className="text-2xl font-bold text-yellow-400">${listing.price}</p>
+                </div>
+                <div className="bg-blue-700 p-4 rounded-lg">
+                  <span className="font-medium text-blue-200">Location</span>
+                  <p className="text-blue-300">{listing.location}</p>
+                </div>
+                <div className="bg-blue-700 p-4 rounded-lg">
+                  <span className="font-medium text-blue-200">Listed</span>
+                  <p className="text-blue-300">
+                    {new Date(listing.createdAt).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </p>
+                </div>
+              </div>
             </div>
+
+
           </div>
         </div>
       </main>
+
+      {/* Fullscreen Image Modal */}
+      {isFullscreen && (
+        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center">
+          <div className="relative w-full h-full flex items-center justify-center">
+            {/* Close Button */}
+            <button
+              onClick={closeFullscreen}
+              className="absolute top-4 right-4 bg-black/50 text-white p-3 rounded-full hover:bg-black/70 transition z-10"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Main Image */}
+            <div className="relative w-full h-full flex items-center justify-center p-4">
+              <Image
+                src={images[currentImageIndex]}
+                alt={listing.title}
+                fill
+                className="object-contain"
+              />
+            </div>
+
+            {/* Navigation Buttons */}
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={prevImage}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-4 rounded-full hover:bg-black/70 transition"
+                >
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={nextImage}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-4 rounded-full hover:bg-black/70 transition"
+                >
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </>
+            )}
+
+            {/* Image Counter */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-lg">
+              {currentImageIndex + 1} / {images.length}
+            </div>
+
+            {/* Instructions */}
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm">
+              Use arrow keys or click to navigate • ESC to close
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
