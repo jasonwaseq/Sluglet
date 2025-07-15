@@ -28,6 +28,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
+  const [error, setError] = useState('');
   
   // Profile form state
   const [description, setDescription] = useState('');
@@ -64,16 +65,14 @@ export default function ProfilePage() {
           const response = await fetch(`/api/user?supabaseId=${session.user.id}`);
           if (response.ok) {
             const data = await response.json();
-            setProfile(data.user);
             setDescription(data.user.description || '');
             setProfilePicture(data.user.profilePicture || null);
           }
           
           // Fetch user listings
           await fetchUserListings(session.user.id);
-        } catch (error) {
-          console.error('Error fetching profile:', error);
-          setError('Failed to load profile');
+        } catch (_error) {
+          console.error('Error fetching profile:', _error);
         }
       } else {
         router.push('/auth');
@@ -93,9 +92,8 @@ export default function ProfilePage() {
         const data = await response.json();
         setUserListings(data.listings || []);
       }
-    } catch (error) {
-      console.error('Error fetching listings:', error);
-      setError('Failed to load listings');
+    } catch (_error) {
+      console.error('Error fetching listings:', _error);
     } finally {
       setLoadingListings(false);
     }
@@ -122,7 +120,7 @@ export default function ProfilePage() {
         const errorData = await response.json();
         setError(errorData.error || 'Failed to delete listing');
       }
-    } catch (error) {
+    } catch {
       setError('Failed to delete listing');
     } finally {
       setDeletingListing(null);
@@ -161,16 +159,11 @@ export default function ProfilePage() {
       if (response.ok) {
         setSuccess('Profile updated successfully!');
         // Update local profile state
-        setProfile(prev => prev ? {
-          ...prev,
-          description,
-          profilePicture: profilePicture || undefined
-        } : null);
       } else {
         const errorData = await response.json();
         setError(errorData.error || 'Failed to update profile');
       }
-    } catch (error) {
+    } catch {
       setError('Failed to update profile');
     } finally {
       setSaving(false);
@@ -462,7 +455,7 @@ export default function ProfilePage() {
             </div>
           ) : userListings.length === 0 ? (
             <div className="text-center py-8">
-              <div className="text-blue-300 mb-4">You haven't created any listings yet.</div>
+              <div className="text-blue-300 mb-4">You haven&apos;t created any listings yet.</div>
               <button
                 onClick={() => router.push('/create-listing')}
                 className="px-6 py-3 bg-yellow-500 text-blue-900 rounded-lg hover:bg-yellow-400 transition font-semibold"
@@ -582,6 +575,11 @@ export default function ProfilePage() {
         </div>
 
         {/* Messages */}
+        {error && (
+          <div className="mt-4 p-4 bg-red-500 text-white rounded-lg">
+            {error}
+          </div>
+        )}
         {success && (
           <div className="mt-4 p-4 bg-green-500 text-white rounded-lg">
             {success}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@/generated/prisma';
 
 const prisma = new PrismaClient();
 
@@ -10,16 +10,16 @@ interface Listing {
   description: string;
   price: number;
   location: string;
-  imageUrl?: string;
-  images?: string;
+  imageUrl?: string | null;
+  images?: string | null;
   amenities: string;
   contactName: string;
   contactEmail: string;
   contactPhone: string;
   availableFrom: string;
   availableTo: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date;
+  updatedAt: Date;
   userId: string;
   user: {
     email: string;
@@ -115,8 +115,8 @@ export async function GET(req: NextRequest) {
     const amenities = searchParams.get('amenities') || '';
     const supabaseId = searchParams.get('supabaseId') || '';
 
-    let whereClause: any = {};
-    const conditions: any[] = [];
+    let whereClause: Record<string, unknown> = {};
+    const conditions: Record<string, unknown>[] = [];
     let searchStartDate: string | undefined;
     let searchEndDate: string | undefined;
 

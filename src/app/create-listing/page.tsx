@@ -61,7 +61,7 @@ export default function CreateListingPage() {
     'Balcony'
   ];
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -396,9 +396,11 @@ export default function CreateListingPage() {
                           }`}
                           onClick={() => setThumbnail(image.id)}
                         >
-                          <img
+                          <Image
                             src={image.preview}
                             alt="Preview"
+                            width={100}
+                            height={100}
                             className="w-full h-full object-cover"
                           />
                           {image.isThumbnail && (

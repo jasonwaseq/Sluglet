@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import DateRangePicker from '@/components/DateRangePicker';
+import { Suspense } from 'react';
 
 interface Listing {
   id: string;
@@ -25,8 +26,7 @@ interface Listing {
   };
 }
 
-export default function ListingsPage() {
-  const [listings, setListings] = useState<Listing[]>([]);
+function ListingsPageContent() {
   const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -58,6 +58,19 @@ export default function ListingsPage() {
   
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const saveFormState = useCallback(() => {
+    const formState = {
+      searchQuery,
+      location,
+      priceMin,
+      priceMax,
+      startDate: startDate?.toISOString(),
+      endDate: endDate?.toISOString(),
+      selectedAmenities
+    };
+    localStorage.setItem('listingsFormState', JSON.stringify(formState));
+  }, [searchQuery, location, priceMin, priceMax, startDate, endDate, selectedAmenities]);
 
   useEffect(() => {
     const fetchListings = async () => {
@@ -153,17 +166,14 @@ export default function ListingsPage() {
         const response = await fetch(`/api/listings?${params.toString()}`);
         if (response.ok) {
           const data = await response.json();
-          setListings(data.listings || []);
           setFilteredListings(data.listings || []);
         } else {
           console.error('Failed to fetch listings');
           // Fallback to mock data if API fails
-          setListings([]);
           setFilteredListings([]);
         }
       } catch (error) {
         console.error('Error fetching listings:', error);
-        setListings([]);
         setFilteredListings([]);
       } finally {
         setLoading(false);
@@ -179,19 +189,6 @@ export default function ListingsPage() {
       saveFormState();
     }
   }, [searchQuery, location, priceMin, priceMax, startDate, endDate, selectedAmenities, saveFormState]);
-
-  const saveFormState = () => {
-    const formState = {
-      searchQuery,
-      location,
-      priceMin,
-      priceMax,
-      startDate: startDate?.toISOString(),
-      endDate: endDate?.toISOString(),
-      selectedAmenities
-    };
-    localStorage.setItem('listingsFormState', JSON.stringify(formState));
-  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -472,5 +469,13 @@ export default function ListingsPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function ListingsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ListingsPageContent />
+    </Suspense>
   );
 } 

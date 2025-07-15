@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
@@ -106,46 +106,47 @@ export default function ListingDetailPage() {
     return `${fromFormatted} - ${toFormatted}`;
   };
 
-  const getListingImages = () => {
-    if (listing?.images && listing.images.length > 0) {
+  const getListingImages = useCallback(() => {
+    if (!listing) return [];
+    if (listing.images && listing.images.length > 0) {
       return listing.images;
     }
-    if (listing?.imageUrl) {
+    if (listing.imageUrl) {
       return [listing.imageUrl];
     }
     // Default placeholder image
     return ["https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop"];
-  };
+  }, [listing]);
 
-  const nextImage = () => {
+  const nextImage = useCallback(() => {
     const images = getListingImages();
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  };
+  }, [getListingImages]);
 
-  const prevImage = () => {
+  const prevImage = useCallback(() => {
     const images = getListingImages();
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  };
+  }, [getListingImages]);
 
-  const openFullscreen = () => {
+  const openFullscreen = useCallback(() => {
     setIsFullscreen(true);
-  };
+  }, []);
 
-  const closeFullscreen = () => {
+  const closeFullscreen = useCallback(() => {
     setIsFullscreen(false);
-  };
+  }, []);
 
-  const handleKeyDown = (e: KeyboardEvent) => {
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
     if (!isFullscreen) return;
     
-    if (e.key === 'Escape') {
+    if (event.key === 'Escape') {
       closeFullscreen();
-    } else if (e.key === 'ArrowLeft') {
+    } else if (event.key === 'ArrowLeft') {
       prevImage();
-    } else if (e.key === 'ArrowRight') {
+    } else if (event.key === 'ArrowRight') {
       nextImage();
     }
-  };
+  }, [isFullscreen, prevImage, nextImage, closeFullscreen]);
 
   useEffect(() => {
     if (isFullscreen) {
@@ -159,7 +160,7 @@ export default function ListingDetailPage() {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
     };
-  }, [isFullscreen]);
+  }, [isFullscreen, handleKeyDown]);
 
   if (loading) {
     return (
