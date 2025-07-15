@@ -35,7 +35,7 @@ export default function SignupForm() {
   const passwordStrength = getPasswordStrength(password);
   const passwordsMatch = password === confirmPassword && password.length > 0;
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setError("");
@@ -99,9 +99,14 @@ export default function SignupForm() {
       setEmail("");
       setPassword("");
       setConfirmPassword("");
-    } catch (err: any) {
-      console.error('Signup error:', err);
-      setError(err.message || "Signup failed");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error('Signup error:', err);
+        setError(err.message || "Signup failed");
+      } else {
+        console.error('Signup error:', err);
+        setError("An unexpected error occurred during signup.");
+      }
     } finally {
       setLoading(false);
     }

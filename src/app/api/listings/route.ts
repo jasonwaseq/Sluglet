@@ -1,7 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '../../../../src/generated/prisma';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
+
+// Define Listing type for type safety
+interface Listing {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  location: string;
+  imageUrl?: string;
+  images?: string;
+  amenities: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  availableFrom: string;
+  availableTo: string;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  user: {
+    email: string;
+  };
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -93,7 +116,7 @@ export async function GET(req: NextRequest) {
     const supabaseId = searchParams.get('supabaseId') || '';
 
     let whereClause: any = {};
-    let conditions: any[] = [];
+    const conditions: any[] = [];
     let searchStartDate: string | undefined;
     let searchEndDate: string | undefined;
 
@@ -243,7 +266,7 @@ export async function GET(req: NextRequest) {
       const searchStartStr = searchStartDate || availableFrom;
       const searchEndStr = searchEndDate || availableTo;
       
-      finalListings = listings.filter(listing => {
+      finalListings = listings.filter((listing: Listing) => {
         const listingStartStr = listing.availableFrom;
         const listingEndStr = listing.availableTo;
         
@@ -267,7 +290,7 @@ export async function GET(req: NextRequest) {
     // Log all listings with their date ranges for debugging
     if (duration || availableFrom || availableTo) {
       console.log('=== FINAL DATE FILTERED LISTINGS ===');
-      finalListings.forEach(listing => {
+      finalListings.forEach((listing: Listing) => {
         console.log(`Listing: ${listing.title}`);
         console.log(`  Available: ${listing.availableFrom} to ${listing.availableTo}`);
         console.log(`  Search period: ${searchStartDate || availableFrom} to ${searchEndDate || availableTo}`);
@@ -297,7 +320,7 @@ export async function GET(req: NextRequest) {
     
     if (location) {
       console.log('Listings with location filter:');
-      listings.forEach(listing => {
+      listings.forEach((listing: Listing) => {
         console.log(`Listing: ${listing.title}, Location: ${listing.location}`);
       });
     }
@@ -305,7 +328,7 @@ export async function GET(req: NextRequest) {
 
 
     // Parse images JSON for each listing
-    const listingsWithParsedImages = finalListings.map((listing: any) => ({
+    const listingsWithParsedImages = finalListings.map((listing: Listing) => ({
       ...listing,
       images: listing.images ? JSON.parse(listing.images) : [],
       amenities: listing.amenities ? JSON.parse(listing.amenities) : []

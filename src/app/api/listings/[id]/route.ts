@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '../../../../../src/generated/prisma';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const listingId = params.id;
+    const { id: listingId } = await params;
 
     if (!listingId) {
       return NextResponse.json(
@@ -56,10 +56,10 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const listingId = params.id;
+    const { id: listingId } = await params;
     const body = await req.json();
     console.log('PUT request received:', { listingId, body });
     
@@ -189,10 +189,10 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const listingId = params.id;
+    const { id: listingId } = await params;
     const body = await req.json();
     const { supabaseId } = body;
 

@@ -6,16 +6,6 @@ import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 import Image from 'next/image';
 
-interface UserProfile {
-  id: string;
-  firebaseId: string;
-  email: string;
-  profilePicture?: string;
-  description?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 interface UserListing {
   id: string;
   title: string;
@@ -35,10 +25,8 @@ interface UserListing {
 
 export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
   // Profile form state
@@ -221,8 +209,8 @@ export default function ProfilePage() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmNewPassword('');
-    } catch (error: any) {
-      setError(error.message || 'Failed to change password');
+    } catch (error: unknown) {
+      setError((error as Error).message || 'Failed to change password');
     } finally {
       setChangingPassword(false);
     }
@@ -257,8 +245,8 @@ export default function ProfilePage() {
       // Sign out and redirect
       await supabase.auth.signOut();
       router.push('/');
-    } catch (error: any) {
-      setError(error.message || 'Failed to delete account');
+    } catch (error: unknown) {
+      setError((error as Error).message || 'Failed to delete account');
     } finally {
       setDeletingAccount(false);
     }
@@ -528,7 +516,7 @@ export default function ProfilePage() {
                   {showDeleteListingConfirm === listing.id && (
                     <div className="mt-4 p-3 bg-red-900 rounded border border-red-700">
                       <p className="text-red-200 text-sm mb-3">
-                        Are you sure you want to delete "{listing.title}"? This action cannot be undone.
+                        Are you sure you want to delete &quot;{listing.title}&quot;? This action cannot be undone.
                       </p>
                       <div className="flex gap-2">
                         <button
@@ -594,11 +582,6 @@ export default function ProfilePage() {
         </div>
 
         {/* Messages */}
-        {error && (
-          <div className="mt-4 p-4 bg-red-500 text-white rounded-lg">
-            {error}
-          </div>
-        )}
         {success && (
           <div className="mt-4 p-4 bg-green-500 text-white rounded-lg">
             {success}

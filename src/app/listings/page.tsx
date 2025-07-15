@@ -178,7 +178,7 @@ export default function ListingsPage() {
     if (searchQuery || location || priceMin || priceMax || startDate || endDate || selectedAmenities.length > 0) {
       saveFormState();
     }
-  }, [searchQuery, location, priceMin, priceMax, startDate, endDate, selectedAmenities]);
+  }, [searchQuery, location, priceMin, priceMax, startDate, endDate, selectedAmenities, saveFormState]);
 
   const saveFormState = () => {
     const formState = {

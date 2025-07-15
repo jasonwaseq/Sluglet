@@ -61,7 +61,7 @@ export default function CreateListingPage() {
     'Balcony'
   ];
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -223,8 +223,12 @@ export default function CreateListingPage() {
         router.push('/dashboard');
       }, 2000);
 
-    } catch (err: any) {
-      setError(err.message || 'Failed to create listing');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to create listing');
+      } else {
+        setError('An unexpected error occurred.');
+      }
     } finally {
       setLoading(false);
     }
