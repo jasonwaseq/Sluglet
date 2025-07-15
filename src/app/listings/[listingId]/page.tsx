@@ -49,13 +49,13 @@ export default function ListingDetailPage() {
 
   useEffect(() => {
     const fetchListing = async () => {
-      if (!params.id) return;
+      if (!params.listingId) return;
       
       setLoading(true);
       setError('');
       
       try {
-        const response = await fetch(`/api/listings/${params.id}`);
+        const response = await fetch(`/api/listings/${params.listingId}`);
         
         if (!response.ok) {
           if (response.status === 404) {
@@ -86,7 +86,7 @@ export default function ListingDetailPage() {
     };
 
     fetchListing();
-  }, [params.id, user]);
+  }, [params.listingId, user]);
 
   const formatDateRange = (from: string, to: string) => {
     const fromDate = new Date(from);
@@ -215,7 +215,7 @@ export default function ListingDetailPage() {
             <div className="flex items-center gap-4">
               {isOwner && (
                 <button
-                  onClick={() => router.push(`/edit-listing/${params.id}`)}
+                  onClick={() => router.push(`/edit-listing/${params.listingId}`)}
                   className="px-4 py-2 bg-yellow-500 text-blue-900 rounded-lg hover:bg-yellow-400 transition font-semibold"
                 >
                   Edit Listing

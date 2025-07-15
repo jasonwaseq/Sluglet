@@ -1,4 +1,4 @@
-"use client";
+ "use client";
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
@@ -76,13 +76,13 @@ export default function EditListingPage() {
   // Fetch listing data
   useEffect(() => {
     const fetchListing = async () => {
-      if (!params.id || !user) return;
+      if (!params.listingId || !user) return;
       
       setFetching(true);
       setError('');
       
       try {
-        const response = await fetch(`/api/listings/${params.id}`);
+        const response = await fetch(`/api/listings/${params.listingId}`);
         
         if (!response.ok) {
           if (response.status === 404) {
@@ -145,7 +145,7 @@ export default function EditListingPage() {
     if (user) {
       fetchListing();
     }
-  }, [params.id, user]);
+  }, [params.listingId, user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -307,11 +307,11 @@ export default function EditListingPage() {
       };
 
       console.log('Sending update request:', {
-        url: `/api/listings/${params.id}`,
+        url: `/api/listings/${params.listingId}`,
         data: listingData
       });
 
-      const response = await fetch(`/api/listings/${params.id}`, {
+      const response = await fetch(`/api/listings/${params.listingId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -330,7 +330,7 @@ export default function EditListingPage() {
 
       setSuccess('Listing updated successfully!');
       setTimeout(() => {
-        router.push(`/listings/${params.id}`);
+        router.push(`/listings/${params.listingId}`);
       }, 2000);
 
     } catch (error) {
@@ -392,7 +392,7 @@ export default function EditListingPage() {
 
             {/* Back Button */}
             <button
-              onClick={() => router.push(`/listings/${params.id}`)}
+              onClick={() => router.push(`/listings/${params.listingId}`)}
               className="px-4 py-2 text-blue-200 hover:text-white transition"
             >
               Cancel
@@ -744,7 +744,7 @@ export default function EditListingPage() {
             <div className="flex justify-end gap-4">
               <button
                 type="button"
-                onClick={() => router.push(`/listings/${params.id}`)}
+                onClick={() => router.push(`/listings/${params.listingId}`)}
                 className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-semibold"
               >
                 Cancel
