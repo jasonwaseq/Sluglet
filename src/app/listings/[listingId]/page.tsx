@@ -40,6 +40,10 @@ export default function ListingDetailPage() {
   const params = useParams();
 
   useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user || null);
     });

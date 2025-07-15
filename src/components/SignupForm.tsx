@@ -64,6 +64,9 @@ export default function SignupForm() {
     try {
       console.log('Starting Supabase signup...');
       // Supabase signup
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
       const { data, error } = await supabase.auth.signUp({
         email,
         password,

@@ -36,6 +36,11 @@ export default function CreateListingPage() {
 
   // Check authentication on component mount
   useEffect(() => {
+    if (!supabase) {
+      router.push('/auth');
+      return;
+    }
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!session?.user) {
         // Redirect to auth page if not logged in
@@ -163,6 +168,9 @@ export default function CreateListingPage() {
 
     try {
       // Get current user
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('You must be logged in to create a listing');

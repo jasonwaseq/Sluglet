@@ -66,6 +66,10 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user || null);
       
@@ -88,6 +92,9 @@ export default function Dashboard() {
 
   const handleSignOut = async () => {
     try {
+      if (!supabase) {
+        throw new Error('Supabase client not initialized');
+      }
       await supabase.auth.signOut();
       router.push('/');
     } catch (error) {
