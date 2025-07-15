@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -18,11 +17,9 @@ export default function DateRangePicker({
   endDate,
   onStartDateChange,
   onEndDateChange,
-  placeholder = "Select dates",
   className = ""
 }: DateRangePickerProps) {
   console.log('DateRangePicker render:', { startDate, endDate });
-  const [isOpen, setIsOpen] = useState(false);
 
   const handleStartDateChange = (date: Date | null) => {
     onStartDateChange(date);
@@ -34,13 +31,6 @@ export default function DateRangePicker({
 
   const handleEndDateChange = (date: Date | null) => {
     onEndDateChange(date);
-  };
-
-  const formatDateRange = () => {
-    if (!startDate && !endDate) return placeholder;
-    if (startDate && !endDate) return `${startDate.toLocaleDateString()} - Select end date`;
-    if (!startDate && endDate) return `Select start date - ${endDate.toLocaleDateString()}`;
-    return `${startDate?.toLocaleDateString()} - ${endDate?.toLocaleDateString()}`;
   };
 
   const clearDates = () => {

@@ -61,7 +61,7 @@ export default function CreateListingPage() {
     'Balcony'
   ];
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -223,8 +223,12 @@ export default function CreateListingPage() {
         router.push('/dashboard');
       }, 2000);
 
-    } catch (err: any) {
-      setError(err.message || 'Failed to create listing');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to create listing');
+      } else {
+        setError('An unexpected error occurred.');
+      }
     } finally {
       setLoading(false);
     }
@@ -392,9 +396,11 @@ export default function CreateListingPage() {
                           }`}
                           onClick={() => setThumbnail(image.id)}
                         >
-                          <img
+                          <Image
                             src={image.preview}
                             alt="Preview"
+                            width={100}
+                            height={100}
                             className="w-full h-full object-cover"
                           />
                           {image.isThumbnail && (
