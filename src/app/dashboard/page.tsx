@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
+import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 import Image from 'next/image';
 import DateRangePicker from '@/components/DateRangePicker';
 
@@ -66,11 +66,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    if (!supabase) {
-      return;
-    }
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
       setUser(session?.user || null);
       
       if (session?.user) {
@@ -92,9 +88,6 @@ export default function Dashboard() {
 
   const handleSignOut = async () => {
     try {
-      if (!supabase) {
-        throw new Error('Supabase client not initialized');
-      }
       await supabase.auth.signOut();
       router.push('/');
     } catch (error) {

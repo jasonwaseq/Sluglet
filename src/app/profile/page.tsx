@@ -56,12 +56,6 @@ export default function ProfilePage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!supabase) {
-      setLoading(false);
-      router.push('/auth');
-      return;
-    }
-    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user || null);
       
@@ -195,9 +189,6 @@ export default function ProfilePage() {
 
     try {
       // Update password with Supabase
-      if (!supabase) {
-        throw new Error('Supabase client not initialized');
-      }
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
@@ -238,9 +229,6 @@ export default function ProfilePage() {
       }
       
       // Delete Supabase user
-      if (!supabase) {
-        throw new Error('Supabase client not initialized');
-      }
       const { error } = await supabase.auth.admin.deleteUser(user.id);
       
       if (error) {

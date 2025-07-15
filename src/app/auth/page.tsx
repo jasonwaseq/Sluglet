@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import LoginForm from '@/components/LoginForm';
 import SignupForm from '@/components/SignupForm';
 import { supabase } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
+import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 export default function AuthPage() {
   const [showSignup, setShowSignup] = useState(false);
@@ -15,12 +15,7 @@ export default function AuthPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       setUser(session?.user || null);
       setLoading(false);
       

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import Image from 'next/image';
 
 interface UploadedImage {
@@ -36,12 +37,7 @@ export default function CreateListingPage() {
 
   // Check authentication on component mount
   useEffect(() => {
-    if (!supabase) {
-      router.push('/auth');
-      return;
-    }
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       if (!session?.user) {
         // Redirect to auth page if not logged in
         router.push('/auth');
@@ -168,9 +164,6 @@ export default function CreateListingPage() {
 
     try {
       // Get current user
-      if (!supabase) {
-        throw new Error('Supabase client not initialized');
-      }
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('You must be logged in to create a listing');
