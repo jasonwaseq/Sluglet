@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
 import Image from 'next/image';
 import DateRangePicker from '@/components/DateRangePicker';
+import { useAuth } from '@/components/AuthProvider';
 
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -15,8 +14,8 @@ export default function Dashboard() {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
-  const [user, setUser] = useState<User | null>(null);
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
+  const { user, signOut } = useAuth();
   const router = useRouter();
 
   // Available amenities options (same as create listing)
@@ -66,13 +65,11 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
-      setUser(session?.user || null);
-      
-      if (session?.user) {
+    if (user) {
+      // Fetch user profile to get profile picture
+      const fetchProfile = async () => {
         try {
-          // Fetch user profile to get profile picture
-          const response = await fetch(`/api/user?supabaseId=${session.user.id}`);
+          const response = await fetch(`/api/user?supabaseId=${user.id}`);
           if (response.ok) {
             const data = await response.json();
             setProfilePicture(data.user.profilePicture || null);
@@ -80,15 +77,15 @@ export default function Dashboard() {
         } catch (error) {
           console.error('Error fetching profile:', error);
         }
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+      };
+      
+      fetchProfile();
+    }
+  }, [user]);
 
   const handleSignOut = async () => {
     try {
-      await supabase.auth.signOut();
+      await signOut();
       router.push('/');
     } catch (error) {
       console.error('Error signing out:', error);

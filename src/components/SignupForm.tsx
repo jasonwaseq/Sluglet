@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { handleAuthError } from '@/lib/auth-utils';
 
 export default function SignupForm() {
   const [email, setEmail] = useState("");
@@ -11,28 +12,27 @@ export default function SignupForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  // Password strength checker
-  const getPasswordStrength = (password: string) => {
-    if (password.length === 0) return { score: 0, label: "", color: "" };
-    
+  // Password strength calculation
+  const calculatePasswordStrength = (password: string) => {
     let score = 0;
     if (password.length >= 8) score++;
     if (/[a-z]/.test(password)) score++;
     if (/[A-Z]/.test(password)) score++;
     if (/[0-9]/.test(password)) score++;
     if (/[^A-Za-z0-9]/.test(password)) score++;
-
+    
     const labels = ["Very Weak", "Weak", "Fair", "Good", "Strong"];
     const colors = ["text-red-500", "text-orange-500", "text-yellow-500", "text-blue-500", "text-green-500"];
     
     return {
       score: Math.min(score, 4),
-      label: labels[Math.min(score - 1, 4)],
-      color: colors[Math.min(score - 1, 4)]
+      maxScore: 5,
+      label: labels[Math.min(score - 1, 4)] || "",
+      color: colors[Math.min(score - 1, 4)] || "text-gray-500"
     };
   };
 
-  const passwordStrength = getPasswordStrength(password);
+  const passwordStrength = calculatePasswordStrength(password);
   const passwordsMatch = password === confirmPassword && password.length > 0;
 
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -70,6 +70,7 @@ export default function SignupForm() {
       });
       
       if (error) {
+        handleAuthError(error);
         throw error;
       }
       
@@ -101,11 +102,9 @@ export default function SignupForm() {
       setConfirmPassword("");
     } catch (err: unknown) {
       if (err instanceof Error) {
-        console.error('Signup error:', err);
         setError(err.message || "Signup failed");
       } else {
-        console.error('Signup error:', err);
-        setError("An unexpected error occurred during signup.");
+        setError("An unexpected error occurred.");
       }
     } finally {
       setLoading(false);

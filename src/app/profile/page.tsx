@@ -2,67 +2,49 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
 import Image from 'next/image';
+import { useAuth } from '@/components/AuthProvider';
+import { supabase } from '@/lib/supabase';
 
-interface UserListing {
+interface Listing {
   id: string;
   title: string;
   description: string;
   price: number;
   location: string;
-  imageUrl?: string;
-  images?: string[];
-  amenities: string[];
-  contactName: string;
-  contactEmail: string;
-  contactPhone: string;
-  availableFrom: string;
-  availableTo: string;
   createdAt: string;
+  images: string[];
 }
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
-  
-  // Profile form state
   const [description, setDescription] = useState('');
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
-  
-  // Password change state
+  const [userListings, setUserListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingListings, setLoadingListings] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [showDeleteListingConfirm, setShowDeleteListingConfirm] = useState<string | null>(null);
+  const [deletingListing, setDeletingListing] = useState<string | null>(null);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
-  
-  // Delete account state
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deletePassword, setDeletePassword] = useState('');
+  const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
-  
-  // User listings state
-  const [userListings, setUserListings] = useState<UserListing[]>([]);
-  const [loadingListings, setLoadingListings] = useState(false);
-  const [showDeleteListingConfirm, setShowDeleteListingConfirm] = useState<string | null>(null);
-  const [deletingListing, setDeletingListing] = useState<string | null>(null);
-  
+  const [deletePassword, setDeletePassword] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user || null);
-      
-      if (session?.user) {
+    if (user) {
+      const fetchProfile = async () => {
         try {
           // Fetch user profile from database
-          const response = await fetch(`/api/user?supabaseId=${session.user.id}`);
+          const response = await fetch(`/api/user?supabaseId=${user.id}`);
           if (response.ok) {
             const data = await response.json();
             setDescription(data.user.description || '');
@@ -70,19 +52,19 @@ export default function ProfilePage() {
           }
           
           // Fetch user listings
-          await fetchUserListings(session.user.id);
+          await fetchUserListings(user.id);
         } catch (_error) {
           console.error('Error fetching profile:', _error);
+        } finally {
+          setLoading(false);
         }
-      } else {
-        router.push('/auth');
-      }
+      };
       
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [router]);
+      fetchProfile();
+    } else {
+      router.push('/auth');
+    }
+  }, [user, router]);
 
   const fetchUserListings = async (userId: string) => {
     setLoadingListings(true);
@@ -325,7 +307,6 @@ export default function ProfilePage() {
               </div>
               <div>
                 <input
-                  ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleProfilePictureUpload}
@@ -475,7 +456,7 @@ export default function ProfilePage() {
                       </div>
                       <p className="text-blue-200 mb-2">📍 {listing.location}</p>
                       <p className="text-blue-300 text-sm mb-3">
-                        {new Date(listing.availableFrom).toLocaleDateString()} - {new Date(listing.availableTo).toLocaleDateString()}
+                        {new Date(listing.createdAt).toLocaleDateString()}
                       </p>
                       <p className="text-blue-200 text-sm line-clamp-2">{listing.description}</p>
                     </div>
@@ -539,14 +520,14 @@ export default function ProfilePage() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold text-white">Delete Account</h2>
             <button
-              onClick={() => setShowDeleteConfirm(!showDeleteConfirm)}
+              onClick={() => setShowDeleteAccountConfirm(!showDeleteAccountConfirm)}
               className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition font-semibold"
             >
-              {showDeleteConfirm ? 'Cancel' : 'Delete Account'}
+              {showDeleteAccountConfirm ? 'Cancel' : 'Delete Account'}
             </button>
           </div>
 
-          {showDeleteConfirm && (
+          {showDeleteAccountConfirm && (
             <div className="bg-red-800 rounded-lg p-4 mb-4">
               <p className="text-red-200 mb-4">
                 <strong>Warning:</strong> This action cannot be undone. All your data, including listings, will be permanently deleted.

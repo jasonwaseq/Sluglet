@@ -1,9 +1,9 @@
- "use client";
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
 import Image from 'next/image';
 
 interface UploadedImage {
@@ -40,9 +40,9 @@ export default function EditListingPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [dragActive, setDragActive] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
   const [isOwner, setIsOwner] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
 
@@ -64,14 +64,10 @@ export default function EditListingPage() {
 
   // Check authentication and ownership on component mount
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
-      if (!session?.user) {
-        router.push('/auth');
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [router]);
+    if (!user) {
+      router.push('/auth');
+    }
+  }, [user, router]);
 
   // Fetch listing data
   useEffect(() => {

@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Image from 'next/image';
-import { supabase } from '@/lib/supabase';
-import { User } from '@supabase/supabase-js';
+import { useAuth } from '@/components/AuthProvider';
 
 interface Listing {
   id: string;
@@ -12,19 +11,17 @@ interface Listing {
   description: string;
   price: number;
   location: string;
-  imageUrl?: string;
-  images?: string[];
-  amenities: string[];
   contactName: string;
   contactEmail: string;
   contactPhone: string;
   availableFrom: string;
   availableTo: string;
+  amenities: string[];
+  images: string[];
   createdAt: string;
-  user: {
+  user?: {
+    id: string;
     email: string;
-    profilePicture?: string;
-    description?: string;
   };
 }
 
@@ -34,18 +31,10 @@ export default function ListingDetailPage() {
   const [error, setError] = useState('');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
   const [isOwner, setIsOwner] = useState(false);
+  const { user } = useAuth();
   const router = useRouter();
   const params = useParams();
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -106,49 +95,46 @@ export default function ListingDetailPage() {
     return `${fromFormatted} - ${toFormatted}`;
   };
 
-  const getListingImages = useCallback(() => {
+  const getListingImages = () => {
     if (!listing) return [];
     if (listing.images && listing.images.length > 0) {
       return listing.images;
     }
-    if (listing.imageUrl) {
-      return [listing.imageUrl];
-    }
     // Default placeholder image
     return ["https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop"];
-  }, [listing]);
+  };
 
-  const nextImage = useCallback(() => {
+  const nextImage = () => {
     const images = getListingImages();
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
-  }, [getListingImages]);
+  };
 
-  const prevImage = useCallback(() => {
+  const prevImage = () => {
     const images = getListingImages();
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
-  }, [getListingImages]);
+  };
 
-  const openFullscreen = useCallback(() => {
+  const openFullscreen = () => {
     setIsFullscreen(true);
-  }, []);
+  };
 
-  const closeFullscreen = useCallback(() => {
+  const closeFullscreen = () => {
     setIsFullscreen(false);
-  }, []);
-
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (!isFullscreen) return;
-    
-    if (event.key === 'Escape') {
-      closeFullscreen();
-    } else if (event.key === 'ArrowLeft') {
-      prevImage();
-    } else if (event.key === 'ArrowRight') {
-      nextImage();
-    }
-  }, [isFullscreen, prevImage, nextImage, closeFullscreen]);
+  };
 
   useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isFullscreen) return;
+      
+      if (event.key === 'Escape') {
+        closeFullscreen();
+      } else if (event.key === 'ArrowLeft') {
+        prevImage();
+      } else if (event.key === 'ArrowRight') {
+        nextImage();
+      }
+    };
+
     if (isFullscreen) {
       document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
@@ -160,7 +146,7 @@ export default function ListingDetailPage() {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
     };
-  }, [isFullscreen, handleKeyDown]);
+  }, [isFullscreen]);
 
   if (loading) {
     return (

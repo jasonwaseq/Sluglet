@@ -15,7 +15,26 @@ export const getSupabaseClient = () => {
     throw new Error('Supabase environment variables are not configured')
   }
   
-  supabaseClient = createClient(supabaseUrl, supabaseAnonKey)
+  // Create client with proper storage configuration for session persistence
+  supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true
+    }
+  })
+  
+  // Add error handling for refresh token errors
+  if (typeof window !== 'undefined') {
+    supabaseClient.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        // Clear any stored session data
+        localStorage.removeItem('supabase.auth.token');
+      }
+    });
+  }
+  
   return supabaseClient
 }
 
@@ -34,6 +53,10 @@ export const supabase = {
     getUser: async () => {
       const client = getSupabaseClient()
       return client.auth.getUser()
+    },
+    getSession: async () => {
+      const client = getSupabaseClient()
+      return client.auth.getSession()
     },
     signInWithPassword: async (credentials: { email: string; password: string }) => {
       const client = getSupabaseClient()
@@ -74,6 +97,13 @@ export const getCurrentUser = async () => {
   const { data: { user }, error } = await client.auth.getUser()
   if (error) throw error
   return user
+}
+
+export const getCurrentSession = async () => {
+  const client = getSupabaseClient()
+  const { data: { session }, error } = await client.auth.getSession()
+  if (error) throw error
+  return session
 }
 
 export const signOut = async () => {

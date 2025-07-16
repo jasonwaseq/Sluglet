@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { handleAuthError } from '@/lib/auth-utils';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -22,6 +23,7 @@ export default function LoginForm() {
       });
       
       if (error) {
+        handleAuthError(error);
         throw error;
       }
       
