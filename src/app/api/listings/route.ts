@@ -8,8 +8,9 @@ interface Listing {
   id: string;
   title: string;
   description: string;
+  city: string;
+  state: string;
   price: number;
-  location: string;
   imageUrl?: string | null;
   images?: string | null;
   amenities: string;
@@ -109,7 +110,6 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get('q') || '';
-    const location = searchParams.get('location') || '';
     const price = searchParams.get('price') || '';
     const availableFrom = searchParams.get('availableFrom') || '';
     const availableTo = searchParams.get('availableTo') || '';
@@ -129,19 +129,13 @@ export async function GET(req: NextRequest) {
       conditions.push({
         OR: [
           { title: { contains: query } },
-          { location: { contains: query } }
+          { city: { contains: query } },
+          { state: { contains: query } }
         ]
       });
     }
 
-    // Filter by location
-    if (location) {
-      console.log('Location filtering:', { location });
-      conditions.push({
-        location: { contains: location }
-      });
-      console.log('Location condition added');
-    }
+
 
     // Filter by amenities
     if (amenities) {
@@ -331,12 +325,7 @@ export async function GET(req: NextRequest) {
       });
     }
     
-    if (location) {
-      console.log('Listings with location filter:');
-      listings.forEach((listing: Listing) => {
-        console.log(`Listing: ${listing.title}, Location: ${listing.location}`);
-      });
-    }
+
     
 
 
