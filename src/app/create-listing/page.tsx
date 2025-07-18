@@ -17,8 +17,9 @@ export default function CreateListingPage() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    city: '',
+    state: '',
     price: '',
-    location: '',
     contactName: '',
     contactEmail: '',
     contactPhone: '',
@@ -168,9 +169,8 @@ export default function CreateListingPage() {
       }
 
       // Validate required fields
-      if (!formData.title || !formData.description || !formData.price || 
-          !formData.location || !formData.contactName ||
-          !formData.contactEmail || !formData.contactPhone || !formData.availableFrom || !formData.availableTo) {
+      if (!formData.title || !formData.description || !formData.city || !formData.state || !formData.price || 
+          !formData.contactName || !formData.contactEmail || !formData.contactPhone || !formData.availableFrom || !formData.availableTo) {
         throw new Error('Please fill in all required fields');
       }
 
@@ -196,6 +196,8 @@ export default function CreateListingPage() {
       // Create listing data
       const listingData = {
         ...formData,
+        city: formData.city.toLowerCase(),
+        state: formData.state.toLowerCase(),
         price: parseInt(formData.price),
         amenities: JSON.stringify(formData.amenities),
         supabaseId: user.id,
@@ -308,15 +310,26 @@ export default function CreateListingPage() {
                 
                 <div>
                   <label className="block text-blue-200 mb-2">Location *</label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300"
-                    placeholder="e.g., Downtown, University District"
-                    required
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                      type="text"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      placeholder="City"
+                      required
+                      className="w-full px-4 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300"
+                    />
+                    <input
+                      type="text"
+                      name="state"
+                      value={formData.state}
+                      onChange={handleInputChange}
+                      placeholder="State"
+                      required
+                      className="w-full px-4 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300"
+                    />
+                  </div>
                 </div>
               </div>
             </div>

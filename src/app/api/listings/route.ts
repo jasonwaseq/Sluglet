@@ -8,8 +8,9 @@ interface Listing {
   id: string;
   title: string;
   description: string;
+  city: string;
+  state: string;
   price: number;
-  location: string;
   imageUrl?: string | null;
   images?: string | null;
   amenities: string;
@@ -32,8 +33,9 @@ export async function POST(req: NextRequest) {
     const {
       title,
       description,
+      city,
+      state,
       price,
-      location,
       imageUrl,
       images,
       contactName,
@@ -46,7 +48,7 @@ export async function POST(req: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!title || !description || !price || !location || 
+    if (!title || !description || !city || !state || !price || 
         !contactName || !contactEmail || !contactPhone || !availableFrom || !availableTo || !supabaseId) {
       return NextResponse.json(
         { error: 'Missing required fields' }, 
@@ -79,8 +81,9 @@ export async function POST(req: NextRequest) {
       data: {
         title,
         description,
+        city,
+        state,
         price: parseInt(price),
-        location,
         imageUrl: imageUrl || null,
         images: images ? JSON.stringify(images) : null, // Store images as JSON string
         amenities,
@@ -107,13 +110,14 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get('q') || '';
-    const location = searchParams.get('location') || '';
     const price = searchParams.get('price') || '';
     const availableFrom = searchParams.get('availableFrom') || '';
     const availableTo = searchParams.get('availableTo') || '';
     const duration = searchParams.get('duration') || '';
     const amenities = searchParams.get('amenities') || '';
     const supabaseId = searchParams.get('supabaseId') || '';
+    const city = searchParams.get('city') || '';
+    const state = searchParams.get('state') || '';
 
     let whereClause: Record<string, unknown> = {};
     const conditions: Record<string, unknown>[] = [];
@@ -125,19 +129,13 @@ export async function GET(req: NextRequest) {
       conditions.push({
         OR: [
           { title: { contains: query } },
-          { location: { contains: query } }
+          { city: { contains: query } },
+          { state: { contains: query } }
         ]
       });
     }
 
-    // Filter by location
-    if (location) {
-      console.log('Location filtering:', { location });
-      conditions.push({
-        location: { contains: location }
-      });
-      console.log('Location condition added');
-    }
+
 
     // Filter by amenities
     if (amenities) {
@@ -233,6 +231,15 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // Filter by city
+    if (city) {
+      conditions.push({ city: { contains: city } });
+    }
+    // Filter by state
+    if (state) {
+      conditions.push({ state: { contains: state } });
+    }
+
     // Construct final whereClause
     if (conditions.length > 0) {
       whereClause.AND = conditions;
@@ -318,12 +325,7 @@ export async function GET(req: NextRequest) {
       });
     }
     
-    if (location) {
-      console.log('Listings with location filter:');
-      listings.forEach((listing: Listing) => {
-        console.log(`Listing: ${listing.title}, Location: ${listing.location}`);
-      });
-    }
+
     
 
 

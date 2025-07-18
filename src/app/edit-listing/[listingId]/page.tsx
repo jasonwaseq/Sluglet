@@ -23,8 +23,9 @@ export default function EditListingPage() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    city: '',
+    state: '',
     price: '',
-    location: '',
     contactName: '',
     contactEmail: '',
     contactPhone: '',
@@ -110,8 +111,9 @@ export default function EditListingPage() {
         setFormData({
           title: listing.title,
           description: listing.description,
+          city: listing.city || '',
+          state: listing.state || '',
           price: listing.price.toString(),
-          location: listing.location,
           contactName: listing.contactName,
           contactEmail: listing.contactEmail,
           contactPhone: listing.contactPhone,
@@ -267,7 +269,7 @@ export default function EditListingPage() {
 
       // Validate required fields
       if (!formData.title || !formData.description || !formData.price || 
-          !formData.location || !formData.contactName ||
+          !formData.contactName ||
           !formData.contactEmail || !formData.contactPhone || !formData.availableFrom || !formData.availableTo) {
         throw new Error('Please fill in all required fields');
       }
@@ -296,6 +298,8 @@ export default function EditListingPage() {
       // Update listing data
       const listingData = {
         ...formData,
+        city: formData.city.toLowerCase(),
+        state: formData.state.toLowerCase(),
         price: parseInt(formData.price),
         images: imageUrls,
         imageUrl: thumbnailUrl,
@@ -451,15 +455,29 @@ export default function EditListingPage() {
 
             <div>
               <label className="block text-blue-200 font-medium mb-2">
-                Location *
+                City *
               </label>
               <input
                 type="text"
-                name="location"
-                value={formData.location}
+                name="city"
+                value={formData.city}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300"
-                placeholder="Enter location"
+                placeholder="City"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-blue-200 font-medium mb-2">
+                State *
+              </label>
+              <input
+                type="text"
+                name="state"
+                value={formData.state}
+                onChange={handleInputChange}
+                className="w-full px-4 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300"
+                placeholder="State"
                 required
               />
             </div>

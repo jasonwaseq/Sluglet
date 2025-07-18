@@ -30,8 +30,9 @@ model Listing {
   id            String   @id @default(cuid())
   title         String
   description   String
+  city          String
+  state         String
   price         Int      // Monthly rent in dollars
-  location      String
   imageUrl      String?  // Legacy single image URL
   images        String?  // JSON string of images array (base64 or URLs)
   amenities     String   // JSON string of amenities array

@@ -8,7 +8,8 @@ import { useAuth } from '@/components/AuthProvider';
 
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [location, setLocation] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -38,7 +39,8 @@ export default function Dashboard() {
     e.preventDefault();
     const params = new URLSearchParams();
     if (searchQuery) params.append('q', searchQuery);
-    if (location) params.append('location', location);
+    if (city) params.append('city', city);
+    if (state) params.append('state', state);
     if (priceMin || priceMax) {
       const priceRange = priceMin && priceMax ? `${priceMin}-${priceMax}` : 
                         priceMin ? `${priceMin}+` : 
@@ -195,18 +197,27 @@ export default function Dashboard() {
                     placeholder="Search listings..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-4 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300"
+                    className="w-full px-4 py-3 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-text placeholder-muted"
                   />
                 </div>
-                
-                {/* Location */}
-                <div className="lg:col-span-3">
+                {/* City */}
+                <div className="lg:col-span-2">
                   <input
                     type="text"
-                    placeholder="Location..."
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="w-full px-4 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300"
+                    placeholder="City..."
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="w-full px-4 py-3 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-text placeholder-muted"
+                  />
+                </div>
+                {/* State */}
+                <div className="lg:col-span-1">
+                  <input
+                    type="text"
+                    placeholder="State..."
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    className="w-full px-4 py-3 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-text placeholder-muted"
                   />
                 </div>
                 
