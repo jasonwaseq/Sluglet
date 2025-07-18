@@ -66,6 +66,8 @@ export async function PUT(
     const {
       title,
       description,
+      city,
+      state,
       price,
       location,
       imageUrl,
@@ -94,7 +96,7 @@ export async function PUT(
     }
 
     // Validate required fields
-    if (!title || !description || !price || !location || 
+    if (!title || !description || !city || !state || !price || !location || 
         !contactName || !contactEmail || !contactPhone || !availableFrom || !availableTo) {
       return NextResponse.json(
         { error: 'Missing required fields' }, 
@@ -145,6 +147,8 @@ export async function PUT(
     console.log('Updating listing with data:', {
       title,
       description,
+      city,
+      state,
       price: parseInt(price),
       location,
       imageUrl: imageUrl || null,
@@ -163,6 +167,8 @@ export async function PUT(
       data: {
         title,
         description,
+        city,
+        state,
         price: parseInt(price),
         location,
         imageUrl: imageUrl || null,

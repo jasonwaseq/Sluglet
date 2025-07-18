@@ -24,6 +24,8 @@ interface Listing {
   user: {
     email: string;
   };
+  city: string;
+  state: string;
 }
 
 function ListingsPageContent() {
@@ -32,7 +34,8 @@ function ListingsPageContent() {
   
   // Search form state
   const [searchQuery, setSearchQuery] = useState('');
-  const [location, setLocation] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
   const [priceMin, setPriceMin] = useState('');
   const [priceMax, setPriceMax] = useState('');
   const [startDate, setStartDate] = useState<Date | null>(null);
@@ -62,7 +65,8 @@ function ListingsPageContent() {
   const saveFormState = useCallback(() => {
     const formState = {
       searchQuery,
-      location,
+      city,
+      state,
       priceMin,
       priceMax,
       startDate: startDate?.toISOString(),
@@ -70,14 +74,15 @@ function ListingsPageContent() {
       selectedAmenities
     };
     localStorage.setItem('listingsFormState', JSON.stringify(formState));
-  }, [searchQuery, location, priceMin, priceMax, startDate, endDate, selectedAmenities]);
+  }, [searchQuery, city, state, priceMin, priceMax, startDate, endDate, selectedAmenities]);
 
   useEffect(() => {
     const fetchListings = async () => {
       try {
         const params = new URLSearchParams();
         const query = searchParams.get('q') || '';
-        const location = searchParams.get('location') || '';
+        const cityParam = searchParams.get('city') || '';
+        const stateParam = searchParams.get('state') || '';
         const price = searchParams.get('price') || '';
         const availableFrom = searchParams.get('availableFrom') || '';
         const availableTo = searchParams.get('availableTo') || '';
@@ -86,13 +91,14 @@ function ListingsPageContent() {
 
         // Check if we have saved form state in localStorage
         const savedFormState = localStorage.getItem('listingsFormState');
-        const hasUrlParams = query || location || price || duration || availableFrom || availableTo || amenities;
+        const hasUrlParams = query || cityParam || stateParam || price || duration || availableFrom || availableTo || amenities;
         
         if (savedFormState && hasUrlParams) {
           // Restore form state from localStorage when there are URL params
           const formState = JSON.parse(savedFormState);
           setSearchQuery(formState.searchQuery || '');
-          setLocation(formState.location || '');
+          setCity(formState.city || '');
+          setState(formState.state || '');
           setPriceMin(formState.priceMin || '');
           setPriceMax(formState.priceMax || '');
           if (formState.startDate) setStartDate(new Date(formState.startDate));
@@ -102,7 +108,8 @@ function ListingsPageContent() {
           // Restore form state from localStorage when no URL params (first load)
           const formState = JSON.parse(savedFormState);
           setSearchQuery(formState.searchQuery || '');
-          setLocation(formState.location || '');
+          setCity(formState.city || '');
+          setState(formState.state || '');
           setPriceMin(formState.priceMin || '');
           setPriceMax(formState.priceMax || '');
           if (formState.startDate) setStartDate(new Date(formState.startDate));
@@ -113,7 +120,8 @@ function ListingsPageContent() {
           // Only populate from URL parameters if we haven't done it before
           hasPopulatedForm.current = true;
           setSearchQuery(query);
-          setLocation(location); // Use the location parameter specifically
+          setCity(cityParam || '');
+          setState(stateParam || '');
           
           if (price) {
             const [min, max] = price.split('-').map(p => p === '+' ? '' : p);
@@ -155,7 +163,8 @@ function ListingsPageContent() {
         }
 
         if (query) params.append('q', query);
-        if (location) params.append('location', location);
+        if (cityParam) params.append('city', cityParam);
+        if (stateParam) params.append('state', stateParam);
         if (price) params.append('price', price);
         if (availableFrom) params.append('availableFrom', availableFrom);
         if (availableTo) params.append('availableTo', availableTo);
@@ -185,10 +194,10 @@ function ListingsPageContent() {
 
   // Save form state whenever form fields change
   useEffect(() => {
-    if (searchQuery || location || priceMin || priceMax || startDate || endDate || selectedAmenities.length > 0) {
+    if (searchQuery || city || state || priceMin || priceMax || startDate || endDate || selectedAmenities.length > 0) {
       saveFormState();
     }
-  }, [searchQuery, location, priceMin, priceMax, startDate, endDate, selectedAmenities, saveFormState]);
+  }, [searchQuery, city, state, priceMin, priceMax, startDate, endDate, selectedAmenities, saveFormState]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,7 +205,8 @@ function ListingsPageContent() {
     
     const params = new URLSearchParams();
     if (searchQuery) params.append('q', searchQuery);
-    if (location) params.append('location', location);
+    if (city) params.append('city', city);
+    if (state) params.append('state', state);
     if (priceMin || priceMax) {
       const priceRange = priceMin && priceMax ? `${priceMin}-${priceMax}` : 
                         priceMin ? `${priceMin}+` : 
@@ -266,7 +276,7 @@ function ListingsPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-blue-900">
+    <div className="min-h-screen bg-background">
       {/* Navigation Bar */}
       <nav className="bg-blue-800 shadow-lg border-b border-blue-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -306,9 +316,9 @@ function ListingsPageContent() {
       </nav>
 
       {/* Search Bar */}
-      <div className="bg-blue-800 border-b border-blue-700 py-6">
+      <div className="bg-surface border-b border-muted py-6">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <form onSubmit={handleSearch} className="bg-blue-700 rounded-lg p-6 shadow-lg">
+          <form onSubmit={handleSearch} className="bg-white rounded-lg p-6 shadow-lg">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 mb-4">
               {/* Search Query */}
               <div className="lg:col-span-4">
@@ -317,18 +327,28 @@ function ListingsPageContent() {
                   placeholder="Search listings..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-4 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-600 text-white placeholder-blue-300"
+                  className="w-full px-4 py-3 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-text placeholder-muted"
                 />
               </div>
               
-              {/* Location */}
-              <div className="lg:col-span-3">
+              {/* City */}
+              <div className="lg:col-span-2">
                 <input
                   type="text"
-                  placeholder="Location..."
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  className="w-full px-4 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-600 text-white placeholder-blue-300"
+                  placeholder="City..."
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  className="w-full px-4 py-3 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-text placeholder-muted"
+                />
+              </div>
+              {/* State */}
+              <div className="lg:col-span-1">
+                <input
+                  type="text"
+                  placeholder="State..."
+                  value={state}
+                  onChange={(e) => setState(e.target.value)}
+                  className="w-full px-4 py-3 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-text placeholder-muted"
                 />
               </div>
               
@@ -441,8 +461,8 @@ function ListingsPageContent() {
                       {formatDateRange(listing.availableFrom, listing.availableTo)}
                     </span>
                   </div>
-                  <p className="text-sm text-blue-300 mt-2">
-                    📍 {listing.location}
+                  <p className="text-sm text-blue-300 mt-1">
+                    🏙️ {listing.city}, {listing.state}
                   </p>
                   {/* Show some amenities if available */}
                   {listing.amenities && listing.amenities.length > 0 && (

@@ -32,8 +32,9 @@ export async function POST(req: NextRequest) {
     const {
       title,
       description,
+      city,
+      state,
       price,
-      location,
       imageUrl,
       images,
       contactName,
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!title || !description || !price || !location || 
+    if (!title || !description || !city || !state || !price || 
         !contactName || !contactEmail || !contactPhone || !availableFrom || !availableTo || !supabaseId) {
       return NextResponse.json(
         { error: 'Missing required fields' }, 
@@ -79,8 +80,9 @@ export async function POST(req: NextRequest) {
       data: {
         title,
         description,
+        city,
+        state,
         price: parseInt(price),
-        location,
         imageUrl: imageUrl || null,
         images: images ? JSON.stringify(images) : null, // Store images as JSON string
         amenities,
@@ -114,6 +116,8 @@ export async function GET(req: NextRequest) {
     const duration = searchParams.get('duration') || '';
     const amenities = searchParams.get('amenities') || '';
     const supabaseId = searchParams.get('supabaseId') || '';
+    const city = searchParams.get('city') || '';
+    const state = searchParams.get('state') || '';
 
     let whereClause: Record<string, unknown> = {};
     const conditions: Record<string, unknown>[] = [];
@@ -231,6 +235,15 @@ export async function GET(req: NextRequest) {
       } else {
         return NextResponse.json({ listings: [] });
       }
+    }
+
+    // Filter by city
+    if (city) {
+      conditions.push({ city: { contains: city } });
+    }
+    // Filter by state
+    if (state) {
+      conditions.push({ state: { contains: state } });
     }
 
     // Construct final whereClause
