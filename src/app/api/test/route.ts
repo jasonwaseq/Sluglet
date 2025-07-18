@@ -10,20 +10,25 @@ export async function GET() {
       select: {
         id: true,
         title: true,
-        location: true,
+        city: true,
+        state: true,
         price: true,
       }
     });
 
-    // Test location filtering
+    // Test city/state filtering
     const marsListings = await prisma.listing.findMany({
       where: {
-        location: { contains: 'mars' }
+        OR: [
+          { city: { contains: 'mars' } },
+          { state: { contains: 'mars' } }
+        ]
       },
       select: {
         id: true,
         title: true,
-        location: true,
+        city: true,
+        state: true,
         price: true,
       }
     });
