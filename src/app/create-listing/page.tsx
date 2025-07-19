@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/lib/supabase';
 import Image from 'next/image';
+import AddressAutocomplete from '@/components/AddressAutocomplete';
 
 interface UploadedImage {
   id: string;
@@ -17,8 +18,11 @@ export default function CreateListingPage() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    address: '',
     city: '',
     state: '',
+    latitude: undefined as number | undefined,
+    longitude: undefined as number | undefined,
     price: '',
     contactName: '',
     contactEmail: '',
@@ -66,6 +70,17 @@ export default function CreateListingPage() {
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handleAddressSelect = (address: string, city: string, state: string, lat?: number, lng?: number) => {
+    setFormData(prev => ({
+      ...prev,
+      address,
+      city,
+      state,
+      latitude: lat,
+      longitude: lng
     }));
   };
 
@@ -169,7 +184,7 @@ export default function CreateListingPage() {
       }
 
       // Validate required fields
-      if (!formData.title || !formData.description || !formData.city || !formData.state || !formData.price || 
+      if (!formData.title || !formData.description || !formData.address || !formData.city || !formData.state || !formData.price || 
           !formData.contactName || !formData.contactEmail || !formData.contactPhone || !formData.availableFrom || !formData.availableTo) {
         throw new Error('Please fill in all required fields');
       }
@@ -196,8 +211,11 @@ export default function CreateListingPage() {
       // Create listing data
       const listingData = {
         ...formData,
+        address: formData.address,
         city: formData.city.toLowerCase(),
         state: formData.state.toLowerCase(),
+        latitude: formData.latitude,
+        longitude: formData.longitude,
         price: parseInt(formData.price),
         amenities: JSON.stringify(formData.amenities),
         supabaseId: user.id,
@@ -310,26 +328,13 @@ export default function CreateListingPage() {
                 
                 <div>
                   <label className="block text-blue-200 mb-2">Location *</label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      placeholder="City"
-                      required
-                      className="w-full px-4 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300"
-                    />
-                    <input
-                      type="text"
-                      name="state"
-                      value={formData.state}
-                      onChange={handleInputChange}
-                      placeholder="State"
-                      required
-                      className="w-full px-4 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300"
-                    />
-                  </div>
+                  <AddressAutocomplete
+                    onAddressSelect={handleAddressSelect}
+                    initialAddress={formData.address}
+                    initialCity={formData.city}
+                    initialState={formData.state}
+                    className="text-white"
+                  />
                 </div>
               </div>
             </div>
