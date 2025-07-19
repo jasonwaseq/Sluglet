@@ -8,11 +8,11 @@ interface Listing {
   id: string;
   title: string;
   description: string;
-  address?: string;
+  address: string | null;
   city: string;
   state: string;
-  latitude?: number;
-  longitude?: number;
+  latitude: number | null;
+  longitude: number | null;
   price: number;
   imageUrl?: string | null;
   images?: string | null;
