@@ -8,8 +8,11 @@ interface Listing {
   id: string;
   title: string;
   description: string;
+  address?: string;
   city: string;
   state: string;
+  latitude?: number;
+  longitude?: number;
   price: number;
   imageUrl?: string | null;
   images?: string | null;
@@ -33,8 +36,11 @@ export async function POST(req: NextRequest) {
     const {
       title,
       description,
+      address,
       city,
       state,
+      latitude,
+      longitude,
       price,
       imageUrl,
       images,
@@ -48,7 +54,7 @@ export async function POST(req: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!title || !description || !city || !state || !price || 
+    if (!title || !description || !address || !city || !state || !price || 
         !contactName || !contactEmail || !contactPhone || !availableFrom || !availableTo || !supabaseId) {
       return NextResponse.json(
         { error: 'Missing required fields' }, 
@@ -81,8 +87,11 @@ export async function POST(req: NextRequest) {
       data: {
         title,
         description,
+        address: address || null,
         city,
         state,
+        latitude: latitude || null,
+        longitude: longitude || null,
         price: parseInt(price),
         imageUrl: imageUrl || null,
         images: images ? JSON.stringify(images) : null, // Store images as JSON string

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import DateRangePicker from '@/components/DateRangePicker';
 import { useAuth } from '@/components/AuthProvider';
+import { Loader } from '@googlemaps/js-api-loader';
 
 export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -18,6 +19,12 @@ export default function Dashboard() {
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const { user, signOut } = useAuth();
   const router = useRouter();
+  
+  // Refs for autocomplete
+  const cityInputRef = useRef<HTMLInputElement>(null);
+  const stateInputRef = useRef<HTMLInputElement>(null);
+  const cityAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const stateAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   // Available amenities options (same as create listing)
   const availableAmenities = [
@@ -65,6 +72,91 @@ export default function Dashboard() {
         : [...prev, amenity]
     );
   };
+
+  // Initialize Google Maps autocomplete
+  useEffect(() => {
+    const initAutocomplete = async () => {
+      try {
+        const loader = new Loader({
+          apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+          version: 'weekly',
+          libraries: ['places']
+        });
+
+        await loader.load();
+        
+        // Initialize city autocomplete
+        if (cityInputRef.current && window.google) {
+          cityAutocompleteRef.current = new window.google.maps.places.Autocomplete(
+            cityInputRef.current,
+            {
+              types: ['(cities)'],
+              componentRestrictions: { country: 'us' }
+            }
+          );
+
+          cityAutocompleteRef.current.addListener('place_changed', () => {
+            const place = cityAutocompleteRef.current?.getPlace();
+            if (place && place.address_components) {
+              let cityName = '';
+              let stateName = '';
+
+              for (const component of place.address_components) {
+                const types = component.types;
+                if (types.includes('locality')) {
+                  cityName = component.long_name;
+                }
+                if (types.includes('administrative_area_level_1')) {
+                  stateName = component.short_name;
+                }
+              }
+
+              if (cityName) {
+                setCity(cityName);
+                setState(stateName);
+              }
+            }
+          });
+        }
+
+        // Initialize state autocomplete
+        if (stateInputRef.current && window.google) {
+          stateAutocompleteRef.current = new window.google.maps.places.Autocomplete(
+            stateInputRef.current,
+            {
+              types: ['administrative_area_level_1'],
+              componentRestrictions: { country: 'us' }
+            }
+          );
+
+          stateAutocompleteRef.current.addListener('place_changed', () => {
+            const place = stateAutocompleteRef.current?.getPlace();
+            if (place && place.address_components) {
+              let stateName = '';
+
+              for (const component of place.address_components) {
+                const types = component.types;
+                if (types.includes('administrative_area_level_1')) {
+                  stateName = component.short_name;
+                  break;
+                }
+              }
+
+              if (stateName) {
+                setState(stateName);
+              }
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error loading Google Maps API for dashboard autocomplete:', error);
+      }
+    };
+
+    if (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
+      initAutocomplete();
+    }
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -200,9 +292,10 @@ export default function Dashboard() {
                     className="w-full px-4 py-3 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-text placeholder-muted"
                   />
                 </div>
-                {/* City */}
+                {/* City with Autocomplete */}
                 <div className="lg:col-span-2">
                   <input
+                    ref={cityInputRef}
                     type="text"
                     placeholder="City..."
                     value={city}
@@ -210,9 +303,10 @@ export default function Dashboard() {
                     className="w-full px-4 py-3 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-text placeholder-muted"
                   />
                 </div>
-                {/* State */}
+                {/* State with Autocomplete */}
                 <div className="lg:col-span-1">
                   <input
+                    ref={stateInputRef}
                     type="text"
                     placeholder="State..."
                     value={state}

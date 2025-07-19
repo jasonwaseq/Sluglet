@@ -30,8 +30,11 @@ model Listing {
   id            String   @id @default(cuid())
   title         String
   description   String
+  address       String?  // Street address
   city          String
   state         String
+  latitude      Float?   // Latitude coordinate
+  longitude     Float?   // Longitude coordinate
   price         Int      // Monthly rent in dollars
   imageUrl      String?  // Legacy single image URL
   images        String?  // JSON string of images array (base64 or URLs)
