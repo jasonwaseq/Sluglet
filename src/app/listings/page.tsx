@@ -10,8 +10,12 @@ interface Listing {
   id: string;
   title: string;
   description: string;
+  address?: string | null;
+  city: string;
+  state: string;
+  latitude?: number | null;
+  longitude?: number | null;
   price: number;
-  location: string;
   imageUrl?: string;
   images?: string[];
   amenities: string[];
@@ -24,8 +28,6 @@ interface Listing {
   user: {
     email: string;
   };
-  city: string;
-  state: string;
 }
 
 function ListingsPageContent() {
@@ -173,11 +175,16 @@ function ListingsPageContent() {
 
         console.log('API request URL:', `/api/listings?${params.toString()}`);
         const response = await fetch(`/api/listings?${params.toString()}`);
+        console.log('Response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('API response data:', data);
           setFilteredListings(data.listings || []);
         } else {
-          console.error('Failed to fetch listings');
+          const errorData = await response.text();
+          console.error('Failed to fetch listings. Status:', response.status);
+          console.error('Error response:', errorData);
           // Fallback to mock data if API fails
           setFilteredListings([]);
         }
