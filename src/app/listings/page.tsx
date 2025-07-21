@@ -44,21 +44,21 @@ function ListingsPageContent() {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
-  // Available amenities options (same as create listing)
-  const availableAmenities = [
-    'Furnished',
-    'WiFi',
-    'Utilities Included',
-    'On-Street Parking',
-    'Driveway Parking',
-    'Garage Parking',
-    'Gym Access',
-    'In-Unit Laundry',
-    'Shared Laundry',
-    'Air Conditioning',
-    'Dishwasher',
-    'Balcony'
-  ];
+  // Available amenities options (same as create listing) - removed since we simplified the UI
+  // const availableAmenities = [
+  //   'Furnished',
+  //   'WiFi',
+  //   'Utilities Included',
+  //   'On-Street Parking',
+  //   'Driveway Parking',
+  //   'Garage Parking',
+  //   'Gym Access',
+  //   'In-Unit Laundry',
+  //   'Shared Laundry',
+  //   'Air Conditioning',
+  //   'Dishwasher',
+  //   'Balcony'
+  // ];
   
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -182,13 +182,13 @@ function ListingsPageContent() {
     router.push(`/listings?${params.toString()}`);
   };
 
-  const handleAmenityToggle = (amenity: string) => {
-    setSelectedAmenities(prev => 
-      prev.includes(amenity)
-        ? prev.filter(a => a !== amenity)
-        : [...prev, amenity]
-    );
-  };
+  // const handleAmenityToggle = (amenity: string) => {
+  //   setSelectedAmenities(prev => 
+  //     prev.includes(amenity)
+  //       ? prev.filter(a => a !== amenity)
+  //       : [...prev, amenity]
+  //   );
+  // };
 
   const handleListingClick = (listingId: string) => {
     router.push(`/listings/${listingId}`);
