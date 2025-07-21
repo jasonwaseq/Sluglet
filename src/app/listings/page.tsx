@@ -271,90 +271,90 @@ function ListingsPageContent() {
           </div>
         </div>
       </nav>
-
-      {/* Search Bar */}
-      <div className="bg-blue-800 border-b border-blue-700 py-6">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <form onSubmit={handleSearch} className="bg-white rounded-lg p-6 shadow-lg">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 mb-4">
-              {/* City and State with Autocomplete */}
-              <div className="lg:col-span-4">
-                <CityStateAutocomplete
-                  key={`${city}-${state}`}
-                  onCitySelect={(selectedCity, selectedState) => {
-                    setCity(selectedCity);
-                    setState(selectedState);
-                  }}
-                  initialCity={city}
-                  initialState={state}
-                  className="w-full"
-                />
-              </div>
-              
-              {/* Price Range */}
-              <div className="lg:col-span-2 flex gap-2">
-                <input
-                  type="number"
-                  placeholder="Min"
-                  value={priceMin}
-                  onChange={(e) => setPriceMin(e.target.value)}
-                  min="0"
-                  className="w-20 px-2 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-600 text-white placeholder-blue-300 text-sm"
-                />
-                <input
-                  type="number"
-                  placeholder="Max"
-                  value={priceMax}
-                  onChange={(e) => setPriceMax(e.target.value)}
-                  min="0"
-                  className="w-20 px-2 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-600 text-white placeholder-blue-300 text-sm"
-                />
-              </div>
-              
-              {/* Date Range */}
-              <div className="lg:col-span-3">
-                <DateRangePicker
-                  key={`${startDate?.toISOString()}-${endDate?.toISOString()}`}
-                  startDate={startDate}
-                  endDate={endDate}
-                  onStartDateChange={setStartDate}
-                  onEndDateChange={setEndDate}
-                  placeholder="Select dates"
-                  className="w-full"
-                />
-              </div>
-            </div>
-            
-            {/* Amenity Filters */}
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold text-white mb-4">Amenities</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {availableAmenities.map((amenity) => (
-                  <label key={amenity} className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedAmenities.includes(amenity)}
-                      onChange={() => handleAmenityToggle(amenity)}
-                      className="w-4 h-4 text-yellow-500 bg-blue-700 border-blue-600 rounded focus:ring-yellow-400 focus:ring-2"
-                    />
-                    <span className="text-blue-200 text-sm">{amenity}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            
-            {/* Search Button */}
-            <div className="flex justify-center mt-6">
-              <button
-                type="submit"
-                className="px-8 py-3 bg-yellow-500 text-blue-900 rounded-lg hover:bg-yellow-400 transition font-semibold text-lg"
-              >
-                Search Listings
-              </button>
-            </div>
-          </form>
+{/* Search Bar */}
+<div className="bg-surface border-b border-muted py-6">
+  <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <form onSubmit={handleSearch} className="bg-white rounded-lg p-6 shadow-lg">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 mb-4">
+        {/* City and State with Autocomplete */}
+        <div className="lg:col-span-4">
+          <CityStateAutocomplete
+            key={`${city}-${state}`}
+            onCitySelect={(selectedCity, selectedState) => {
+              setCity(selectedCity);
+              setState(selectedState);
+            }}
+            initialCity={city}
+            initialState={state}
+            className="w-full"
+          />
+        </div>
+        
+        {/* Price Range */}
+        <div className="lg:col-span-2 flex gap-2">
+          <input
+            type="number"
+            placeholder="Min"
+            value={priceMin}
+            onChange={(e) => setPriceMin(e.target.value)}
+            min="0"
+            className="w-20 px-2 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-600 text-white placeholder-blue-300 text-sm"
+          />
+          <input
+            type="number"
+            placeholder="Max"
+            value={priceMax}
+            onChange={(e) => setPriceMax(e.target.value)}
+            min="0"
+            className="w-20 px-2 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-600 text-white placeholder-blue-300 text-sm"
+          />
+        </div>
+        
+        {/* Date Range */}
+        <div className="lg:col-span-3">
+          <DateRangePicker
+            key={`${startDate?.toISOString()}-${endDate?.toISOString()}`}
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={setStartDate}
+            onEndDateChange={setEndDate}
+            placeholder="Select dates"
+            className="w-full"
+          />
         </div>
       </div>
+      
+      {/* Amenity Filters */}
+      <div className="mt-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Amenities</h3>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {availableAmenities.map((amenity) => (
+            <label key={amenity} className="flex items-center space-x-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={selectedAmenities.includes(amenity)}
+                onChange={() => handleAmenityToggle(amenity)}
+                className="w-4 h-4 text-yellow-500 bg-blue-700 border-blue-600 rounded focus:ring-yellow-400 focus:ring-2"
+              />
+              <span className="text-blue-200 text-sm">{amenity}</span>
+            </label>
+          ))}
+
+        </div>
+      </div>
+      
+      {/* Search Button */}
+      <div className="flex justify-center mt-6">
+        <button
+          type="submit"
+          className="px-8 py-3 bg-yellow-500 text-blue-900 rounded-lg hover:bg-yellow-400 transition font-semibold text-lg"
+        >
+          Search Listings
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 
       {/* Listings Grid */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
