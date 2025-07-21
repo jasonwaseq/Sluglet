@@ -33,7 +33,7 @@ model Listing {
   address       String?  // Street address
   city          String
   bedrooms      Int
-  property      string 
+  property      String 
   state         String
   latitude      Float?   // Latitude coordinate
   longitude     Float?   // Longitude coordinate
