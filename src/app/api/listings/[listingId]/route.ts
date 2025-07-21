@@ -1,7 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';
 
-const prisma = new PrismaClient();
+let prisma: PrismaClient;
+
+try {
+  prisma = new PrismaClient({
+    log: ['query', 'info', 'warn', 'error'],
+  });
+} catch (error) {
+  console.error('Failed to initialize Prisma client:', error);
+  throw error;
+}
 
 export async function GET(
   req: NextRequest,
@@ -16,6 +25,8 @@ export async function GET(
         { status: 400 }
       );
     }
+
+    console.log('GET /api/listings/[listingId] - Fetching from database for ID:', listingId);
 
     const listing = await prisma.listing.findUnique({
       where: { id: listingId },
@@ -54,208 +65,6 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: Promise<{ listingId: string }> }
-) {
-  try {
-    const { listingId } = await params;
-    const body = await req.json();
-    console.log('PUT request received:', { listingId, body });
-    
-    const {
-      title,
-      description,
-      city,
-      state,
-      price,
-      imageUrl,
-      images,
-      contactName,
-      contactEmail,
-      contactPhone,
-      availableFrom,
-      availableTo,
-      amenities,
-      supabaseId
-    } = body;
-
-    if (!listingId) {
-      return NextResponse.json(
-        { error: 'Listing ID is required' }, 
-        { status: 400 }
-      );
-    }
-
-    if (!supabaseId) {
-      return NextResponse.json(
-        { error: 'Supabase ID is required' }, 
-        { status: 400 }
-      );
-    }
-
-    // Validate required fields
-    if (!title || !description || !city || !state || !price || 
-        !contactName || !contactEmail || !contactPhone || !availableFrom || !availableTo) {
-      return NextResponse.json(
-        { error: 'Missing required fields' }, 
-        { status: 400 }
-      );
-    }
-
-    // Validate date range
-    if (new Date(availableFrom) >= new Date(availableTo)) {
-      return NextResponse.json(
-        { error: 'Available To date must be after Available From date' }, 
-        { status: 400 }
-      );
-    }
-
-    // Find the user by supabaseId
-    const user = await prisma.user.findUnique({
-      where: { supabaseId }
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' }, 
-        { status: 404 }
-      );
-    }
-
-    // Find the listing and verify ownership
-    const listing = await prisma.listing.findUnique({
-      where: { id: listingId },
-      include: { user: true }
-    });
-
-    if (!listing) {
-      return NextResponse.json(
-        { error: 'Listing not found' }, 
-        { status: 404 }
-      );
-    }
-
-    if (listing.userId !== user.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized to edit this listing' }, 
-        { status: 403 }
-      );
-    }
-
-    console.log('Updating listing with data:', {
-      title,
-      description,
-      city,
-      state,
-      price: parseInt(price),
-      imageUrl: imageUrl || null,
-      images: images ? JSON.stringify(images) : null,
-      amenities,
-      contactName,
-      contactEmail,
-      contactPhone,
-      availableFrom,
-      availableTo
-    });
-
-    // Update the listing
-    const updatedListing = await prisma.listing.update({
-      where: { id: listingId },
-      data: {
-        title,
-        description,
-        city,
-        state,
-        price: parseInt(price),
-        imageUrl: imageUrl || null,
-        images: images ? JSON.stringify(images) : null,
-        amenities: amenities ? JSON.stringify(amenities) : '[]',
-        contactName,
-        contactEmail,
-        contactPhone,
-        availableFrom,
-        availableTo
-      }
-    });
-
-    console.log('Listing updated successfully:', updatedListing);
-    return NextResponse.json({ listing: updatedListing });
-  } catch (error) {
-    console.error('Error updating listing:', error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update listing' }, 
-      { status: 500 }
-    );
-  }
-}
-
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ listingId: string }> }
-) {
-  try {
-    const { listingId } = await params;
-    const body = await req.json();
-    const { supabaseId } = body;
-
-    if (!listingId) {
-      return NextResponse.json(
-        { error: 'Listing ID is required' }, 
-        { status: 400 }
-      );
-    }
-
-    if (!supabaseId) {
-      return NextResponse.json(
-        { error: 'Supabase ID is required' }, 
-        { status: 400 }
-      );
-    }
-
-    // Find the user by supabaseId
-    const user = await prisma.user.findUnique({
-      where: { supabaseId }
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' }, 
-        { status: 404 }
-      );
-    }
-
-    // Find the listing and verify ownership
-    const listing = await prisma.listing.findUnique({
-      where: { id: listingId },
-      include: { user: true }
-    });
-
-    if (!listing) {
-      return NextResponse.json(
-        { error: 'Listing not found' }, 
-        { status: 404 }
-      );
-    }
-
-    if (listing.userId !== user.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized to delete this listing' }, 
-        { status: 403 }
-      );
-    }
-
-    // Delete the listing
-    await prisma.listing.delete({
-      where: { id: listingId }
-    });
-
-    return NextResponse.json({ message: 'Listing deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting listing:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete listing' }, 
-      { status: 500 }
-    );
-  }
-} 
+// PUT and DELETE functions disabled for mock data implementation
+// export async function PUT(...) { ... }
+// export async function DELETE(...) { ... } 

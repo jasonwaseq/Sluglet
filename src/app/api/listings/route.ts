@@ -1,112 +1,73 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient } from '@/generated/prisma';
 
-// Mock data for testing
-const mockListings = [
-  {
-    id: '1',
-    title: 'Cozy Studio in Downtown',
-    description: 'Beautiful studio apartment in the heart of downtown',
-    address: '123 Main St',
-    city: 'San Francisco',
-    state: 'CA',
-    latitude: 37.7749,
-    longitude: -122.4194,
-    price: 2500,
-    imageUrl: null,
-    images: null,
-    amenities: ['WiFi', 'Kitchen', 'Laundry'],
-    contactName: 'John Doe',
-    contactEmail: 'john@example.com',
-    contactPhone: '555-1234',
-    availableFrom: '2024-09-01',
-    availableTo: '2024-12-31',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    userId: 'user1',
-    user: {
-      id: 'user1',
-      supabaseId: 'supabase-user-1',
-      email: 'john@example.com',
-      profilePicture: null,
-      description: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-  },
-  {
-    id: '2',
-    title: 'Modern 2BR Apartment',
-    description: 'Spacious 2-bedroom apartment with great amenities',
-    address: '456 Oak Ave',
-    city: 'Los Angeles',
-    state: 'CA',
-    latitude: 34.0522,
-    longitude: -118.2437,
-    price: 3200,
-    imageUrl: null,
-    images: null,
-    amenities: ['Pool', 'Gym', 'Parking'],
-    contactName: 'Jane Smith',
-    contactEmail: 'jane@example.com',
-    contactPhone: '555-5678',
-    availableFrom: '2024-10-01',
-    availableTo: '2025-01-31',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    userId: 'user2',
-    user: {
-      id: 'user2',
-      supabaseId: 'supabase-user-2',
-      email: 'jane@example.com',
-      profilePicture: null,
-      description: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    }
-  }
-];
+let prisma: PrismaClient;
+
+try {
+  prisma = new PrismaClient({
+    log: ['query', 'info', 'warn', 'error'],
+  });
+} catch (error) {
+  console.error('Failed to initialize Prisma client:', error);
+  throw error;
+}
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('GET /api/listings - Using mock data');
+    console.log('GET /api/listings - Fetching from database');
     
     const { searchParams } = new URL(request.url);
     const city = searchParams.get('city');
     const state = searchParams.get('state');
-    const minPrice = searchParams.get('minPrice');
-    const maxPrice = searchParams.get('maxPrice');
+    const price = searchParams.get('price');
 
-    let filteredListings = [...mockListings];
+    const whereClause: Record<string, unknown> = {};
 
     // Apply filters
     if (city) {
-      filteredListings = filteredListings.filter(listing => 
-        listing.city.toLowerCase().includes(city.toLowerCase())
-      );
+      whereClause.city = { contains: city };
     }
 
     if (state) {
-      filteredListings = filteredListings.filter(listing => 
-        listing.state.toLowerCase().includes(state.toLowerCase())
-      );
+      whereClause.state = { contains: state };
     }
 
-    if (minPrice) {
-      const min = parseInt(minPrice);
-      filteredListings = filteredListings.filter(listing => listing.price >= min);
+    if (price) {
+      const [min, max] = price.split('-').map(p => p === '+' ? undefined : parseInt(p));
+      whereClause.price = {
+        gte: min,
+        ...(max && { lte: max })
+      };
     }
 
-    if (maxPrice) {
-      const max = parseInt(maxPrice);
-      filteredListings = filteredListings.filter(listing => listing.price <= max);
-    }
-
-    console.log(`Returning ${filteredListings.length} listings`);
+    console.log('Database query whereClause:', whereClause);
     
-    // Return in the format the frontend expects
-    return NextResponse.json({ listings: filteredListings });
+    const listings = await prisma.listing.findMany({
+      where: whereClause,
+      include: {
+        user: {
+          select: {
+            email: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+    
+    console.log(`Found ${listings.length} listings from database`);
+    
+    // Parse images and amenities JSON for each listing
+    const listingsWithParsedData = listings.map((listing) => ({
+      ...listing,
+      images: listing.images ? JSON.parse(listing.images as string) : [],
+      amenities: listing.amenities ? JSON.parse(listing.amenities as string) : []
+    }));
+
+    return NextResponse.json({ listings: listingsWithParsedData });
   } catch (error) {
-    console.error('Error in listings API:', error);
+    console.error('Error fetching listings:', error);
     return NextResponse.json(
       { error: 'Failed to fetch listings' },
       { status: 500 }
@@ -120,7 +81,7 @@ export async function POST(request: NextRequest) {
     console.log('POST /api/listings - Received data:', body);
 
     // Validate required fields
-    const requiredFields = ['title', 'description', 'city', 'state', 'price', 'contactName', 'contactEmail', 'contactPhone', 'availableFrom', 'availableTo'];
+    const requiredFields = ['title', 'description', 'city', 'state', 'price', 'contactName', 'contactEmail', 'contactPhone', 'availableFrom', 'availableTo', 'supabaseId'];
     for (const field of requiredFields) {
       if (!body[field]) {
         return NextResponse.json(
@@ -130,16 +91,49 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create new listing with mock ID
-    const newListing = {
-      id: `listing-${Date.now()}`,
-      ...body,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      userId: body.userId || 'mock-user-id'
-    };
+    // Find user by supabaseId
+    const user = await prisma.user.findUnique({
+      where: { supabaseId: body.supabaseId }
+    });
 
-    console.log('Created new listing:', newListing);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Create new listing in database
+    const newListing = await prisma.listing.create({
+      data: {
+        title: body.title,
+        description: body.description,
+        address: body.address || null,
+        city: body.city,
+        state: body.state,
+        latitude: body.latitude || null,
+        longitude: body.longitude || null,
+        price: parseInt(body.price),
+        imageUrl: body.imageUrl || null,
+        images: body.images ? JSON.stringify(body.images) : null,
+        amenities: body.amenities ? JSON.stringify(body.amenities) : '[]',
+        contactName: body.contactName,
+        contactEmail: body.contactEmail,
+        contactPhone: body.contactPhone,
+        availableFrom: body.availableFrom,
+        availableTo: body.availableTo,
+        userId: user.id
+      },
+      include: {
+        user: {
+          select: {
+            email: true
+          }
+        }
+      }
+    });
+
+    console.log('Created new listing in database:', newListing);
     return NextResponse.json(newListing, { status: 201 });
   } catch (error) {
     console.error('Error creating listing:', error);
