@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import DateRangePicker from '@/components/DateRangePicker';
+import CityStateAutocomplete from '@/components/CityStateAutocomplete';
 import { useAuth } from '@/components/AuthProvider';
-import { Loader } from '@googlemaps/js-api-loader';
 
 export default function Dashboard() {
-  const [searchQuery, setSearchQuery] = useState('');
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [priceMin, setPriceMin] = useState('');
@@ -19,12 +18,6 @@ export default function Dashboard() {
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const { user, signOut } = useAuth();
   const router = useRouter();
-  
-  // Refs for autocomplete
-  const cityInputRef = useRef<HTMLInputElement>(null);
-  const stateInputRef = useRef<HTMLInputElement>(null);
-  const cityAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-  const stateAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
   // Available amenities options (same as create listing)
   const availableAmenities = [
@@ -45,7 +38,6 @@ export default function Dashboard() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (searchQuery) params.append('q', searchQuery);
     if (city) params.append('city', city);
     if (state) params.append('state', state);
     if (priceMin || priceMax) {
@@ -73,114 +65,34 @@ export default function Dashboard() {
     );
   };
 
-  // Initialize Google Maps autocomplete
+  const handleCityStateSelect = (selectedCity: string, selectedState: string) => {
+    setCity(selectedCity);
+    setState(selectedState);
+  };
+
+  // Fetch user profile on component mount
   useEffect(() => {
-    const initAutocomplete = async () => {
-      try {
-        const loader = new Loader({
-          apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
-          version: 'weekly',
-          libraries: ['places']
-        });
-
-        await loader.load();
-        
-        // Initialize city autocomplete
-        if (cityInputRef.current && window.google) {
-          cityAutocompleteRef.current = new window.google.maps.places.Autocomplete(
-            cityInputRef.current,
-            {
-              types: ['(cities)'],
-              componentRestrictions: { country: 'us' }
-            }
-          );
-
-          cityAutocompleteRef.current.addListener('place_changed', () => {
-            const place = cityAutocompleteRef.current?.getPlace();
-            if (place && place.address_components) {
-              let cityName = '';
-              let stateName = '';
-
-              for (const component of place.address_components) {
-                const types = component.types;
-                if (types.includes('locality')) {
-                  cityName = component.long_name;
-                }
-                if (types.includes('administrative_area_level_1')) {
-                  stateName = component.short_name;
-                }
-              }
-
-              if (cityName) {
-                setCity(cityName);
-                setState(stateName);
-              }
-            }
-          });
-        }
-
-        // Initialize state autocomplete
-        if (stateInputRef.current && window.google) {
-          stateAutocompleteRef.current = new window.google.maps.places.Autocomplete(
-            stateInputRef.current,
-            {
-              types: ['administrative_area_level_1'],
-              componentRestrictions: { country: 'us' }
-            }
-          );
-
-          stateAutocompleteRef.current.addListener('place_changed', () => {
-            const place = stateAutocompleteRef.current?.getPlace();
-            if (place && place.address_components) {
-              let stateName = '';
-
-              for (const component of place.address_components) {
-                const types = component.types;
-                if (types.includes('administrative_area_level_1')) {
-                  stateName = component.short_name;
-                  break;
-                }
-              }
-
-              if (stateName) {
-                setState(stateName);
-              }
-            }
-          });
-        }
-      } catch (error) {
-        console.error('Error loading Google Maps API for dashboard autocomplete:', error);
-      }
-    };
-
-    if (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
-      initAutocomplete();
-    }
-  }, []);
-
-  useEffect(() => {
-    if (user) {
-      // Fetch user profile to get profile picture
-      const fetchProfile = async () => {
+    const fetchProfile = async () => {
+      if (user) {
         try {
-          const response = await fetch(`/api/user?supabaseId=${user.id}`);
+          const response = await fetch(`/api/user/profile?supabaseId=${user.id}`);
           if (response.ok) {
-            const data = await response.json();
-            setProfilePicture(data.user.profilePicture || null);
+            const profileData = await response.json();
+            setProfilePicture(profileData.profilePicture);
           }
         } catch (error) {
           console.error('Error fetching profile:', error);
         }
-      };
-      
-      fetchProfile();
-    }
+      }
+    };
+
+    fetchProfile();
   }, [user]);
 
   const handleSignOut = async () => {
     try {
       await signOut();
-      router.push('/');
+      router.push('/auth');
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -281,39 +193,16 @@ export default function Dashboard() {
           {/* Search Section */}
           <div className="max-w-6xl mx-auto mb-12">
             <form onSubmit={handleSearch} className="bg-blue-800 rounded-lg p-6 shadow-lg">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 mb-4">
-                {/* Search Query */}
-                <div className="lg:col-span-4">
-                  <input
-                    type="text"
-                    placeholder="Search listings..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-4 py-3 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-text placeholder-muted"
-                  />
-                </div>
-                {/* City with Autocomplete */}
-                <div className="lg:col-span-2">
-                  <input
-                    ref={cityInputRef}
-                    type="text"
-                    placeholder="City..."
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="w-full px-4 py-3 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-text placeholder-muted"
-                  />
-                </div>
-                {/* State with Autocomplete */}
-                <div className="lg:col-span-1">
-                  <input
-                    ref={stateInputRef}
-                    type="text"
-                    placeholder="State..."
-                    value={state}
-                    onChange={(e) => setState(e.target.value)}
-                    className="w-full px-4 py-3 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-text placeholder-muted"
-                  />
-                </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 mb-4">
+              {/* City and State with Autocomplete */}
+              <div className="lg:col-span-4">
+                <CityStateAutocomplete
+                  onCitySelect={handleCityStateSelect}
+                  initialCity={city}
+                  initialState={state}
+                  className="w-full"
+                />
+              </div>
                 
                 {/* Price Range */}
                 <div className="lg:col-span-2 flex gap-2">
