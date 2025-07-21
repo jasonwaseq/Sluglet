@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import DateRangePicker from '@/components/DateRangePicker';
@@ -116,6 +116,7 @@ function ListingsPageContent() {
           }
         } else {
           // Clear all form fields when no URL parameters
+          console.log('Clearing form fields - no URL parameters found');
           setCity('');
           setState('');
           setPriceMin('');
@@ -279,6 +280,7 @@ function ListingsPageContent() {
               {/* City and State with Autocomplete */}
               <div className="lg:col-span-4">
                 <CityStateAutocomplete
+                  key={`${city}-${state}`}
                   onCitySelect={(selectedCity, selectedState) => {
                     setCity(selectedCity);
                     setState(selectedState);
@@ -410,7 +412,7 @@ function ListingsPageContent() {
                         if (typeof listing.amenities === 'string') {
                           try {
                             amenitiesArray = JSON.parse(listing.amenities);
-                          } catch (e) {
+                          } catch {
                             amenitiesArray = [];
                           }
                         }
