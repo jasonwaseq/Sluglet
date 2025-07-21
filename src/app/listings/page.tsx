@@ -235,7 +235,7 @@ function ListingsPageContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Navigation Bar */}
-      <nav className="bg-white shadow-sm border-b border-gray-100">
+      <nav className="bg-blue-900 shadow-sm border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -277,7 +277,7 @@ function ListingsPageContent() {
       {/* Search Bar */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <form onSubmit={handleSearch} className="bg-white rounded-lg p-6 shadow-lg">
+          <form onSubmit={handleSearch} className="bg-blue-900 rounded-lg p-6 shadow-lg">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 mb-4">
               {/* City and State with Autocomplete */}
               <div className="lg:col-span-4">
