@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     console.log('POST /api/listings - Received data:', body);
 
     // Validate required fields
-    const requiredFields = ['title', 'description', 'city', 'state', 'price', 'contactName', 'contactEmail', 'contactPhone', 'availableFrom', 'availableTo', 'supabaseId'];
+    const requiredFields = ['title', 'description', 'city', 'state', 'bedrooms', 'property', 'price', 'contactName', 'contactEmail', 'contactPhone', 'availableFrom', 'availableTo', 'supabaseId'];
     for (const field of requiredFields) {
       if (!body[field]) {
         return NextResponse.json(
@@ -110,6 +110,8 @@ export async function POST(request: NextRequest) {
         description: body.description,
         address: body.address || null,
         city: body.city,
+        bedrooms: parseInt(body.bedrooms),
+        property: body.property,
         state: body.state,
         latitude: body.latitude || null,
         longitude: body.longitude || null,
