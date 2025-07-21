@@ -1,4 +1,8 @@
+# Sluglet - Student Housing Platform
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+A platform for students to find and list housing options near their campus.
 
 ## Getting Started
 
