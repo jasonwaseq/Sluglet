@@ -172,7 +172,7 @@ export default function CityStateAutocomplete({
           placeholder="City..."
           value={city}
           onChange={handleCityChange}
-          className="w-full px-4 py-3 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-text placeholder-muted"
+          className="w-full px-4 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-600 text-white placeholder-blue-300"
           disabled={isLoading}
         />
         {isLoading && <div className="text-xs text-gray-500 mt-1">Loading autocomplete...</div>}
@@ -186,7 +186,7 @@ export default function CityStateAutocomplete({
           placeholder="State..."
           value={state}
           onChange={handleStateChange}
-          className="w-full px-4 py-3 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-text placeholder-muted"
+          className="w-full px-4 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-600 text-white placeholder-blue-300"
           disabled={isLoading}
         />
         {isLoading && <div className="text-xs text-gray-500 mt-1">Loading autocomplete...</div>}
