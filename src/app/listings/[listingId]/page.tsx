@@ -174,6 +174,20 @@ export default function ListingDetailPage() {
     );
   }
 
+  // Defensive amenities parsing
+  let amenities: string[] = [];
+  if (listing.amenities) {
+    if (Array.isArray(listing.amenities)) {
+      amenities = listing.amenities;
+    } else if (typeof listing.amenities === 'string') {
+      try {
+        amenities = JSON.parse(listing.amenities);
+      } catch {
+        amenities = [];
+      }
+    }
+  }
+
   const images = getListingImages();
 
   return (
@@ -336,9 +350,9 @@ export default function ListingDetailPage() {
               {/* Amenities */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4">Amenities</h3>
-                {listing.amenities && listing.amenities.length > 0 ? (
+                {amenities && amenities.length > 0 ? (
                   <ul className="space-y-2">
-                    {listing.amenities.map((amenity: string, index: number) => (
+                    {amenities.map((amenity: string, index: number) => (
                       <li key={index} className="flex items-center text-blue-200">
                         <span className="text-yellow-400 mr-2">✓</span>
                         {amenity}
