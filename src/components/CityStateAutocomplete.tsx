@@ -19,15 +19,25 @@ export default function CityStateAutocomplete({
   const [city, setCity] = useState(initialCity);
   const [state, setState] = useState(initialState);
   const [isLoading, setIsLoading] = useState(false);
+  const [isApiLoaded, setIsApiLoaded] = useState(false);
   const cityInputRef = useRef<HTMLInputElement>(null);
   const stateInputRef = useRef<HTMLInputElement>(null);
   const cityAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const stateAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
+  // Sync local state with props when they change
   useEffect(() => {
-    const initAutocomplete = async () => {
+    setCity(initialCity);
+    setState(initialState);
+  }, [initialCity, initialState]);
+
+  // Initialize Google Maps API
+  useEffect(() => {
+    const initApi = async () => {
+      if (isApiLoaded) return;
+      
       setIsLoading(true);
-      console.log('Initializing City/State Autocomplete...');
+      console.log('Initializing Google Maps API...');
       
       try {
         const loader = new Loader({
@@ -37,84 +47,110 @@ export default function CityStateAutocomplete({
         });
 
         await loader.load();
-        console.log('Google Maps API loaded for city/state autocomplete');
-        
-        // Initialize city autocomplete
-        if (cityInputRef.current && window.google) {
-          cityAutocompleteRef.current = new window.google.maps.places.Autocomplete(
-            cityInputRef.current,
-            {
-              types: ['(cities)'],
-              componentRestrictions: { country: 'us' }
-            }
-          );
-
-          cityAutocompleteRef.current.addListener('place_changed', () => {
-            const place = cityAutocompleteRef.current?.getPlace();
-            if (place && place.address_components) {
-              let cityName = '';
-              let stateName = '';
-
-              for (const component of place.address_components) {
-                const types = component.types;
-                if (types.includes('locality')) {
-                  cityName = component.long_name;
-                }
-                if (types.includes('administrative_area_level_1')) {
-                  stateName = component.short_name;
-                }
-              }
-
-              if (cityName) {
-                setCity(cityName);
-                setState(stateName);
-                onCitySelect(cityName, stateName);
-              }
-            }
-          });
-        }
-
-        // Initialize state autocomplete (for when user types in state field)
-        if (stateInputRef.current && window.google) {
-          stateAutocompleteRef.current = new window.google.maps.places.Autocomplete(
-            stateInputRef.current,
-            {
-              types: ['administrative_area_level_1'],
-              componentRestrictions: { country: 'us' }
-            }
-          );
-
-          stateAutocompleteRef.current.addListener('place_changed', () => {
-            const place = stateAutocompleteRef.current?.getPlace();
-            if (place && place.address_components) {
-              let stateName = '';
-
-              for (const component of place.address_components) {
-                const types = component.types;
-                if (types.includes('administrative_area_level_1')) {
-                  stateName = component.short_name;
-                  break;
-                }
-              }
-
-              if (stateName) {
-                setState(stateName);
-                onCitySelect(city, stateName);
-              }
-            }
-          });
-        }
+        console.log('Google Maps API loaded successfully');
+        setIsApiLoaded(true);
       } catch (error) {
-        console.error('Error loading Google Maps API for city/state autocomplete:', error);
+        console.error('Error loading Google Maps API:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
-      initAutocomplete();
+    if (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY && !isApiLoaded) {
+      initApi();
     }
-  }, [onCitySelect, city]);
+  }, [isApiLoaded]);
+
+  // Initialize autocomplete after API is loaded
+  useEffect(() => {
+    if (!isApiLoaded || !window.google) return;
+
+    console.log('Initializing autocomplete components...');
+    
+    // Initialize city autocomplete
+    if (cityInputRef.current && !cityAutocompleteRef.current) {
+      try {
+        cityAutocompleteRef.current = new window.google.maps.places.Autocomplete(
+          cityInputRef.current,
+          {
+            types: ['(cities)'],
+            componentRestrictions: { country: 'us' }
+          }
+        );
+
+        cityAutocompleteRef.current.addListener('place_changed', () => {
+          const place = cityAutocompleteRef.current?.getPlace();
+          console.log('City place selected:', place);
+          
+          if (place && place.address_components) {
+            let cityName = '';
+            let stateName = '';
+
+            for (const component of place.address_components) {
+              const types = component.types;
+              if (types.includes('locality')) {
+                cityName = component.long_name;
+              }
+              if (types.includes('administrative_area_level_1')) {
+                stateName = component.short_name;
+              }
+            }
+
+            console.log('Extracted city:', cityName, 'state:', stateName);
+
+            if (cityName) {
+              setCity(cityName);
+              setState(stateName);
+              onCitySelect(cityName, stateName);
+            }
+          }
+        });
+        console.log('City autocomplete initialized');
+      } catch (error) {
+        console.error('Error initializing city autocomplete:', error);
+      }
+    }
+
+    // Initialize state autocomplete
+    if (stateInputRef.current && !stateAutocompleteRef.current) {
+      try {
+        stateAutocompleteRef.current = new window.google.maps.places.Autocomplete(
+          stateInputRef.current,
+          {
+            types: ['administrative_area_level_1'],
+            componentRestrictions: { country: 'us' }
+          }
+        );
+
+        stateAutocompleteRef.current.addListener('place_changed', () => {
+          const place = stateAutocompleteRef.current?.getPlace();
+          console.log('State place selected:', place);
+          
+          if (place && place.address_components) {
+            let stateName = '';
+
+            for (const component of place.address_components) {
+              const types = component.types;
+              if (types.includes('administrative_area_level_1')) {
+                stateName = component.short_name;
+                break;
+              }
+            }
+
+            console.log('Extracted state:', stateName);
+
+            if (stateName) {
+              setState(stateName);
+              onCitySelect(city, stateName);
+            }
+          }
+        });
+        console.log('State autocomplete initialized');
+      } catch (error) {
+        console.error('Error initializing state autocomplete:', error);
+      }
+    }
+  }, [isApiLoaded, onCitySelect, city]);
 
   const handleCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCity(e.target.value);
@@ -139,6 +175,7 @@ export default function CityStateAutocomplete({
           className="w-full px-4 py-3 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-text placeholder-muted"
           disabled={isLoading}
         />
+        {isLoading && <div className="text-xs text-gray-500 mt-1">Loading autocomplete...</div>}
       </div>
       
       {/* State with Autocomplete */}
@@ -152,6 +189,7 @@ export default function CityStateAutocomplete({
           className="w-full px-4 py-3 border border-muted rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-text placeholder-muted"
           disabled={isLoading}
         />
+        {isLoading && <div className="text-xs text-gray-500 mt-1">Loading autocomplete...</div>}
       </div>
     </div>
   );
