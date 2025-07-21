@@ -44,7 +44,7 @@ function ListingsPageContent() {
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
-  // Available amenities options (same as create listing)
+  // Available amenities options
   const availableAmenities = [
     'Furnished',
     'WiFi',
@@ -144,7 +144,7 @@ function ListingsPageContent() {
           const errorData = await response.text();
           console.error('Failed to fetch listings. Status:', response.status);
           console.error('Error response:', errorData);
-          // Fallback to mock data if API fails
+          // API failed, show empty state
           setFilteredListings([]);
         }
       } catch (error) {
@@ -233,9 +233,9 @@ function ListingsPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50">
       {/* Navigation Bar */}
-      <nav className="bg-blue-800 shadow-lg border-b border-blue-700">
+      <nav className="bg-white shadow-sm border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -256,156 +256,172 @@ function ListingsPageContent() {
 
             {/* Search Results Info */}
             <div className="flex-1 text-center">
-              <h1 className="text-xl font-semibold text-white">
-                Search Results ({filteredListings.length} listings)
+              <h1 className="text-lg font-medium text-gray-900">
+                {filteredListings.length} {filteredListings.length === 1 ? 'listing' : 'listings'} found
               </h1>
             </div>
 
-            {/* Back to Dashboard */}
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="px-4 py-2 text-blue-200 hover:text-white transition"
-            >
-              Back to Dashboard
-            </button>
+            {/* Action Buttons */}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.push('/create-listing')}
+                className="px-6 py-2 bg-yellow-400 hover:bg-yellow-300 text-gray-900 rounded-lg transition-all duration-200 font-semibold shadow-sm hover:shadow-md"
+              >
+                Create Listing
+              </button>
+            </div>
           </div>
         </div>
       </nav>
-{/* Search Bar */}
-<div className="bg-surface border-b border-muted py-6">
-  <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-    <form onSubmit={handleSearch} className="bg-white rounded-lg p-6 shadow-lg">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 mb-4">
-        {/* City and State with Autocomplete */}
-        <div className="lg:col-span-4">
-          <CityStateAutocomplete
-            key={`${city}-${state}`}
-            onCitySelect={(selectedCity, selectedState) => {
-              setCity(selectedCity);
-              setState(selectedState);
-            }}
-            initialCity={city}
-            initialState={state}
-            className="w-full"
-          />
-        </div>
-        
-        {/* Price Range */}
-        <div className="lg:col-span-2 flex gap-2">
-          <input
-            type="number"
-            placeholder="Min"
-            value={priceMin}
-            onChange={(e) => setPriceMin(e.target.value)}
-            min="0"
-            className="w-20 px-2 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-600 text-white placeholder-blue-300 text-sm"
-          />
-          <input
-            type="number"
-            placeholder="Max"
-            value={priceMax}
-            onChange={(e) => setPriceMax(e.target.value)}
-            min="0"
-            className="w-20 px-2 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-600 text-white placeholder-blue-300 text-sm"
-          />
-        </div>
-        
-        {/* Date Range */}
-        <div className="lg:col-span-3">
-          <DateRangePicker
-            key={`${startDate?.toISOString()}-${endDate?.toISOString()}`}
-            startDate={startDate}
-            endDate={endDate}
-            onStartDateChange={setStartDate}
-            onEndDateChange={setEndDate}
-            placeholder="Select dates"
-            className="w-full"
-          />
-        </div>
-      </div>
-      
-      {/* Amenity Filters */}
-      <div className="mt-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Amenities</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {availableAmenities.map((amenity) => (
-            <label key={amenity} className="flex items-center space-x-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={selectedAmenities.includes(amenity)}
-                onChange={() => handleAmenityToggle(amenity)}
-                className="w-4 h-4 text-yellow-500 bg-blue-700 border-blue-600 rounded focus:ring-yellow-400 focus:ring-2"
-              />
-              <span className="text-blue-200 text-sm">{amenity}</span>
-            </label>
-          ))}
 
+      {/* Search Bar */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <form onSubmit={handleSearch} className="bg-white rounded-lg p-6 shadow-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 mb-4">
+              {/* City and State with Autocomplete */}
+              <div className="lg:col-span-4">
+                <CityStateAutocomplete
+                  key={`${city}-${state}`}
+                  onCitySelect={(selectedCity, selectedState) => {
+                    setCity(selectedCity);
+                    setState(selectedState);
+                  }}
+                  initialCity={city}
+                  initialState={state}
+                  className="w-full"
+                />
+              </div>
+              
+              {/* Price Range */}
+              <div className="lg:col-span-2 flex gap-2">
+                <input
+                  type="number"
+                  placeholder="Min $"
+                  value={priceMin}
+                  onChange={(e) => setPriceMin(e.target.value)}
+                  min="0"
+                  className="w-20 px-2 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-600 text-white placeholder-blue-300 text-sm"
+                />
+                <input
+                  type="number"
+                  placeholder="Max $"
+                  value={priceMax}
+                  onChange={(e) => setPriceMax(e.target.value)}
+                  min="0"
+                  className="w-20 px-2 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-600 text-white placeholder-blue-300 text-sm"
+                />
+              </div>
+              
+              {/* Date Range */}
+              <div className="lg:col-span-3">
+                <DateRangePicker
+                  key={`${startDate?.toISOString()}-${endDate?.toISOString()}`}
+                  startDate={startDate}
+                  endDate={endDate}
+                  onStartDateChange={setStartDate}
+                  onEndDateChange={setEndDate}
+                  placeholder="Select dates"
+                  className="w-full"
+                />
+              </div>
+            </div>
+            
+            {/* Amenity Filters */}
+            <div className="mt-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Amenities</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {availableAmenities.map((amenity) => (
+                  <label key={amenity} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedAmenities.includes(amenity)}
+                      onChange={() => handleAmenityToggle(amenity)}
+                      className="w-4 h-4 text-yellow-500 bg-blue-600 border-blue-600 rounded focus:ring-yellow-400 focus:ring-2"
+                    />
+                    <span className="text-gray-700 text-sm">{amenity}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            
+            {/* Search Button */}
+            <div className="flex justify-center mt-6">
+              <button
+                type="submit"
+                className="px-8 py-3 bg-yellow-500 text-blue-900 rounded-lg hover:bg-yellow-400 transition font-semibold text-lg"
+              >
+                Search Listings
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-      
-      {/* Search Button */}
-      <div className="flex justify-center mt-6">
-        <button
-          type="submit"
-          className="px-8 py-3 bg-yellow-500 text-blue-900 rounded-lg hover:bg-yellow-400 transition font-semibold text-lg"
-        >
-          Search Listings
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
 
       {/* Listings Grid */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {filteredListings.length === 0 ? (
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-semibold text-white mb-4">No listings found</h2>
-            <p className="text-blue-200">Try adjusting your search criteria</p>
+          <div className="text-center py-16">
+            <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-2">No listings found</h2>
+            <p className="text-gray-600">Try adjusting your search criteria</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {filteredListings.map((listing) => (
               <div
                 key={listing.id}
                 onClick={() => handleListingClick(listing.id)}
-                className="bg-blue-800 rounded-lg shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-shadow border border-blue-700"
+                className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden border border-gray-100 hover:border-gray-200"
               >
-                <div className="relative h-48">
+                <div className="relative h-56 overflow-hidden">
                   <Image
                     src={getListingImage(listing)}
                     alt={listing.title}
                     fill
-                    className="object-cover"
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                   {/* Image count badge if multiple images */}
                   {listing.images && listing.images.length > 1 && (
-                    <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-sm">
-                      +{listing.images.length - 1} more
+                    <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-sm text-white px-2 py-1 rounded-full text-xs font-medium">
+                      +{listing.images.length - 1}
                     </div>
                   )}
+                  {/* Price badge */}
+                  <div className="absolute bottom-3 left-3 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                    ${listing.price}/mo
+                  </div>
                 </div>
+                
                 <div className="p-6">
-                  <h3 className="text-lg font-semibold text-white mb-2">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
                     {listing.title}
                   </h3>
-                  <p className="text-blue-200 mb-4 line-clamp-2">
+                  <p className="text-gray-600 mb-4 line-clamp-2 text-sm">
                     {listing.description}
                   </p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-2xl font-bold text-yellow-400">
-                      ${listing.price}/month
-                    </span>
-                    <span className="text-sm text-blue-300">
-                      {formatDateRange(listing.availableFrom, listing.availableTo)}
-                    </span>
+                  
+                  <div className="flex items-center text-gray-500 text-sm mb-3">
+                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                    </svg>
+                    {listing.city}, {listing.state}
                   </div>
-                  <p className="text-sm text-blue-300 mt-1">
-                    🏙️ {listing.city}, {listing.state}
-                  </p>
+                  
+                  <div className="flex items-center text-gray-500 text-sm">
+                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                    </svg>
+                    {formatDateRange(listing.availableFrom, listing.availableTo)}
+                  </div>
+                  
                   {/* Show some amenities if available */}
                   {listing.amenities && (
-                    <div className="mt-3 flex flex-wrap gap-1">
+                    <div className="mt-4 flex flex-wrap gap-1">
                       {(() => {
                         // Handle amenities that might be a string or array
                         let amenitiesArray = listing.amenities;
@@ -423,17 +439,17 @@ function ListingsPageContent() {
                         
                         return (
                           <>
-                            {amenitiesArray.slice(0, 3).map((amenity, index) => (
+                            {amenitiesArray.slice(0, 2).map((amenity, index) => (
                               <span
                                 key={index}
-                                className="text-xs bg-blue-700 text-blue-200 px-2 py-1 rounded"
+                                className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full"
                               >
                                 {amenity}
                               </span>
                             ))}
-                            {amenitiesArray.length > 3 && (
-                              <span className="text-xs text-blue-300">
-                                +{amenitiesArray.length - 3} more
+                            {amenitiesArray.length > 2 && (
+                              <span className="text-xs text-gray-500">
+                                +{amenitiesArray.length - 2} more
                               </span>
                             )}
                           </>

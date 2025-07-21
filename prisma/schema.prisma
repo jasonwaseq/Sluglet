@@ -11,8 +11,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = "postgresql://mock:mock@localhost:5432/mock"
-  directUrl = "postgresql://mock:mock@localhost:5432/mock"
+  url      = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL")
 }
 
 model User {
@@ -33,7 +33,7 @@ model Listing {
   address       String?  // Street address
   city          String
   bedrooms      Int
-  property      String 
+  property      String
   state         String
   latitude      Float?   // Latitude coordinate
   longitude     Float?   // Longitude coordinate
