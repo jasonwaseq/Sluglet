@@ -339,6 +339,7 @@ function ListingsPageContent() {
               <span className="text-blue-200 text-sm">{amenity}</span>
             </label>
           ))}
+
         </div>
       </div>
       
