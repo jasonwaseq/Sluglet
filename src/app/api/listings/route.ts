@@ -92,15 +92,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Find user by supabaseId
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { supabaseId: body.supabaseId }
     });
 
+    // If user does not exist, create them
     if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      user = await prisma.user.create({
+        data: {
+          supabaseId: body.supabaseId,
+          email: body.contactEmail,
+          description: '',
+          profilePicture: null
+        }
+      });
     }
 
     // Create new listing in database
