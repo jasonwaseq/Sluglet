@@ -21,6 +21,8 @@ export default function CreateListingPage() {
     address: '',
     city: '',
     state: '',
+    bedrooms: '1',
+    property: 'Apartment',
     latitude: undefined as number | undefined,
     longitude: undefined as number | undefined,
     price: '',
@@ -65,7 +67,7 @@ export default function CreateListingPage() {
     'Balcony'
   ];
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -184,7 +186,7 @@ export default function CreateListingPage() {
       }
 
       // Validate required fields
-      if (!formData.title || !formData.description || !formData.address || !formData.city || !formData.state || !formData.price || 
+      if (!formData.title || !formData.description || !formData.address || !formData.city || !formData.state || !formData.bedrooms || !formData.property || !formData.price || 
           !formData.contactName || !formData.contactEmail || !formData.contactPhone || !formData.availableFrom || !formData.availableTo) {
         throw new Error('Please fill in all required fields');
       }
@@ -214,6 +216,8 @@ export default function CreateListingPage() {
         address: formData.address,
         city: formData.city.toLowerCase(),
         state: formData.state.toLowerCase(),
+        bedrooms: parseInt(formData.bedrooms),
+        property: formData.property,
         latitude: formData.latitude,
         longitude: formData.longitude,
         price: parseInt(formData.price),
@@ -351,6 +355,48 @@ export default function CreateListingPage() {
                 placeholder="Describe your property, its features, and what makes it special..."
                 required
               />
+            </div>
+
+            {/* Property Details */}
+            <div>
+              <h2 className="text-xl font-semibold text-white mb-4">Property Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-blue-200 mb-2">Number of Bedrooms *</label>
+                  <select
+                    name="bedrooms"
+                    value={formData.bedrooms}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white"
+                    required
+                  >
+                    <option value="1">1 Bedroom</option>
+                    <option value="2">2 Bedrooms</option>
+                    <option value="3">3 Bedrooms</option>
+                    <option value="4">4 Bedrooms</option>
+                    <option value="5">5+ Bedrooms</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-blue-200 mb-2">Property Type *</label>
+                  <select
+                    name="property"
+                    value={formData.property}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white"
+                    required
+                  >
+                    <option value="Apartment">Apartment</option>
+                    <option value="House">House</option>
+                    <option value="Condo">Condo</option>
+                    <option value="Studio">Studio</option>
+                    <option value="Townhouse">Townhouse</option>
+                    <option value="Duplex">Duplex</option>
+                    <option value="Loft">Loft</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             {/* Image Upload */}
