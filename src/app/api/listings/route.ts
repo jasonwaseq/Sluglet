@@ -7,7 +7,7 @@ try {
   prisma = new PrismaClient({
     log: ['query', 'info', 'warn', 'error'],
   });
-} catch (error) {
+  } catch (error) {
   console.error('Failed to initialize Prisma client:', error);
   throw error;
 }
@@ -35,8 +35,8 @@ export async function GET(request: NextRequest) {
     if (price) {
       const [min, max] = price.split('-').map(p => p === '+' ? undefined : parseInt(p));
       whereClause.price = {
-        gte: min,
-        ...(max && { lte: max })
+          gte: min,
+          ...(max && { lte: max })
       };
     }
 
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Error fetching listings:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch listings' },
+      { error: 'Failed to fetch listings' }, 
       { status: 500 }
     );
   }
