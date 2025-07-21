@@ -65,6 +65,6 @@ export async function GET(
   }
 }
 
-// PUT and DELETE functions disabled for mock data implementation
+// PUT and DELETE functions can be implemented when needed
 // export async function PUT(...) { ... }
 // export async function DELETE(...) { ... } 

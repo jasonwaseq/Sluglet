@@ -144,7 +144,7 @@ function ListingsPageContent() {
           const errorData = await response.text();
           console.error('Failed to fetch listings. Status:', response.status);
           console.error('Error response:', errorData);
-          // Fallback to mock data if API fails
+          // API failed, show empty state
           setFilteredListings([]);
         }
       } catch (error) {
