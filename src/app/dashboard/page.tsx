@@ -49,6 +49,16 @@ function Dashboard() {
 
   // Restore search state from URL on mount (match listings page)
   useEffect(() => {
+    function parseDateString(dateStr: string): Date | null {
+      // Expects 'YYYY-MM-DD'
+      const parts = dateStr.split('-');
+      if (parts.length !== 3) return null;
+      const [year, month, day] = parts.map(Number);
+      if (!year || !month || !day) return null;
+      // month is 0-based in JS Date
+      return new Date(year, month - 1, day);
+    }
+
     const cityParam = searchParams.get('city') || '';
     const stateParam = searchParams.get('state') || '';
     const price = searchParams.get('price') || '';
@@ -69,16 +79,22 @@ function Dashboard() {
     }
 
     if (duration) {
+      // Expecting 'YYYY-MM-DD-YYYY-MM-DD' or 'YYYY-MM-DD' (single day)
       const parts = duration.split('-');
-      let start, end;
-      if (parts.length === 2) {
-        [start, end] = parts;
-      } else if (parts.length === 6) {
-        start = `${parts[0]}-${parts[1]}-${parts[2]}`;
-        end = `${parts[3]}-${parts[4]}-${parts[5]}`;
+      if (parts.length === 6) {
+        const start = `${parts[0]}-${parts[1]}-${parts[2]}`;
+        const end = `${parts[3]}-${parts[4]}-${parts[5]}`;
+        setStartDate(parseDateString(start));
+        setEndDate(parseDateString(end));
+      } else if (parts.length === 2) {
+        // fallback: treat as two dates
+        setStartDate(parseDateString(parts[0]));
+        setEndDate(parseDateString(parts[1]));
+      } else if (parts.length === 3) {
+        // fallback: treat as single date
+        setStartDate(parseDateString(duration));
+        setEndDate(parseDateString(duration));
       }
-      if (start) setStartDate(new Date(start));
-      if (end) setEndDate(new Date(end));
     }
 
     if (amenities) {
