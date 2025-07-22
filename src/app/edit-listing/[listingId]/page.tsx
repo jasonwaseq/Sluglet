@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/lib/supabase';
+import { supabaseClient } from '@/lib/supabase';
 import Image from 'next/image';
 
 interface UploadedImage {
@@ -64,6 +65,20 @@ export default function EditListingPage() {
     'Dishwasher',
     'Balcony'
   ];
+
+  // Add the uploadImageToSupabase helper
+  async function uploadImageToSupabase(file: File): Promise<string> {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+    const { error } = await supabaseClient!.storage
+      .from('listing-images')
+      .upload(fileName, file);
+    if (error) throw error;
+    const { data } = supabaseClient!.storage
+      .from('listing-images')
+      .getPublicUrl(fileName);
+    return data.publicUrl;
+  }
 
   // Check authentication and ownership on component mount
   useEffect(() => {
@@ -239,17 +254,11 @@ export default function EditListingPage() {
       imageUrls.push(image.url);
     }
     
-    // Upload new images
+    // Upload new images to Supabase Storage
     for (const image of uploadedImages) {
       try {
-        // Convert file to base64 for now (in production, you'd upload to a service like AWS S3)
-        const base64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.readAsDataURL(image.file);
-        });
-        
-        imageUrls.push(base64);
+        const url = await uploadImageToSupabase(image.file);
+        imageUrls.push(url);
       } catch (error) {
         console.error('Error uploading image:', error);
       }

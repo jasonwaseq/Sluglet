@@ -38,6 +38,9 @@ export const getSupabaseClient = () => {
   return supabaseClient
 }
 
+// Export the actual client for direct use (for storage, etc.)
+export { supabaseClient };
+
 // For backward compatibility, export a function that returns the client
 export const supabase = {
   auth: {
