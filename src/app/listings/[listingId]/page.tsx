@@ -413,16 +413,16 @@ export default function ListingDetailPage() {
                 </div>
                 <div className="bg-blue-700 p-4 rounded-lg">
                   <span className="font-medium text-blue-200">Location</span>
-                  <p className="text-blue-300">
+                  <div className="text-blue-300">
                     {listing.address ? (
                       <>
-                        <p>{listing.address}</p>
-                        <p>{listing.city}, {listing.state}</p>
+                        <div>{listing.address}</div>
+                        <div>{listing.city}, {listing.state}</div>
                       </>
                     ) : (
-                      <p>{listing.location}</p>
+                      <div>{listing.location}</div>
                     )}
-                  </p>
+                  </div>
                 </div>
                 <div className="bg-blue-700 p-4 rounded-lg">
                   <span className="font-medium text-blue-200">Listed</span>
