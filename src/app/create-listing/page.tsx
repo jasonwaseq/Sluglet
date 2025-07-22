@@ -237,8 +237,16 @@ export default function CreateListingPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create listing');
+        const contentType = response.headers.get('content-type');
+        let errorMsg = 'Failed to create listing';
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          errorMsg = errorData.error || errorMsg;
+        } else {
+          const text = await response.text();
+          errorMsg = text || errorMsg;
+        }
+        throw new Error(errorMsg);
       }
 
       setSuccess('Listing created successfully!');
