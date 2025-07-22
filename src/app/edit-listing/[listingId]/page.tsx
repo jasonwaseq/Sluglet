@@ -26,6 +26,7 @@ export default function EditListingPage() {
     city: '',
     state: '',
     price: '',
+    bedrooms: '',
     contactName: '',
     contactEmail: '',
     contactPhone: '',
@@ -114,6 +115,7 @@ export default function EditListingPage() {
           city: listing.city || '',
           state: listing.state || '',
           price: listing.price.toString(),
+          bedrooms: listing.bedrooms?.toString() || '',
           contactName: listing.contactName,
           contactEmail: listing.contactEmail,
           contactPhone: listing.contactPhone,
@@ -574,6 +576,23 @@ export default function EditListingPage() {
                   required
                 />
               </div>
+            </div>
+
+            {/* Bedrooms */}
+            <div>
+              <label className="block text-blue-200 font-medium mb-2">
+                Bedrooms *
+              </label>
+              <input
+                type="number"
+                name="bedrooms"
+                value={formData.bedrooms}
+                onChange={handleInputChange}
+                min="0"
+                className="w-full px-4 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300"
+                placeholder="Number of bedrooms"
+                required
+              />
             </div>
 
             {/* Amenities */}
