@@ -68,6 +68,14 @@ export async function POST(req: NextRequest) {
   throw error;
 }
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb', // Increase as needed
+    },
+  },
+};
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
