@@ -32,56 +32,46 @@ export async function GET(request: NextRequest) {
     const bedrooms = searchParams.get('bedrooms');
     const amenities = searchParams.get('amenities'); // comma-separated
     const duration = searchParams.get('duration'); // format: YYYY-MM-DD-YYYY-MM-DD
+    const supabaseId = searchParams.get('supabaseId');
 
-    const whereClause: Record<string, unknown> = {};
-
-    // Apply filters
+    // Build filters array for AND logic
+    const filters = [];
     if (city) {
-      whereClause.city = { contains: city.trim(), mode: 'insensitive' };
+      filters.push({ city: { contains: city.trim(), mode: 'insensitive' as const } });
     }
-
     if (state) {
-      whereClause.state = { contains: state.trim(), mode: 'insensitive' };
+      filters.push({ state: { contains: state.trim(), mode: 'insensitive' as const } });
     }
-
     if (price) {
       const [min, max] = price.split('-').map(p => p === '+' ? undefined : parseInt(p));
-      whereClause.price = {
+      filters.push({
+        price: {
           gte: min,
           ...(max && { lte: max })
-      };
+        }
+      });
     }
-
     if (property) {
-      whereClause.property = property;
+      filters.push({ property });
     }
-
     if (bedrooms) {
-      // Support "6+" as 6 or more
       if (bedrooms === '6') {
-        whereClause.bedrooms = { gte: 6 };
+        filters.push({ bedrooms: { gte: 6 } });
       } else {
-        whereClause.bedrooms = parseInt(bedrooms);
+        filters.push({ bedrooms: parseInt(bedrooms) });
       }
     }
-
-    // Date range filter (duration)
+    if (supabaseId) {
+      filters.push({ user: { supabaseId } });
+    }
     if (duration) {
-      // Format: YYYY-MM-DD-YYYY-MM-DD
       const [from, to] = duration.split('-');
       if (from && to) {
-        whereClause.AND = [
-          { availableFrom: { lte: to } }, // listing available from before or on 'to'
-          { availableTo: { gte: from } }   // listing available to after or on 'from'
-        ];
+        filters.push({ availableFrom: { lte: from } });
+        filters.push({ availableTo: { gte: to } });
       }
     }
-
-    // Amenity filter (must contain all selected amenities)
-    let amenityList: string[] = [];
-    if (amenities) {
-      amenityList = amenities.split(',').map(a => a.trim()).filter(Boolean);
-    }
+    const whereClause = filters.length > 0 ? { AND: filters } : {};
 
     console.log('Database query whereClause:', whereClause);
     
@@ -108,7 +98,8 @@ export async function GET(request: NextRequest) {
     
     // Filter by amenities in-memory (since amenities is stored as JSON string)
     let filteredListings = listings;
-    if (amenityList.length > 0) {
+    if (amenities) {
+      const amenityList = amenities.split(',').map(a => a.trim()).filter(Boolean);
       filteredListings = listings.filter((listing: Listing) => {
         let listingAmenities: string[] = [];
         try {

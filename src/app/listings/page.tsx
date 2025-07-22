@@ -253,6 +253,11 @@ function ListingsPageContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Utility function to title-case a string
+  function toTitleCase(str: string) {
+    return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-blue-900 flex items-center justify-center">
@@ -499,7 +504,7 @@ function ListingsPageContent() {
                   </div>
                   
                   <div className="flex items-center text-blue-200 text-sm mb-3">
-                    {listing.city}, {listing.state}
+                    {toTitleCase(listing.city)}, {listing.state.toUpperCase()}
                   </div>
                   
                   {/* Address */}

@@ -195,6 +195,11 @@ export default function ListingDetailPage() {
 
   const images = getListingImages();
 
+  // Utility function to title-case a string
+  function toTitleCase(str: string) {
+    return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+  }
+
   return (
     <div className="min-h-screen bg-blue-900">
       {/* Navigation Bar */}
@@ -417,7 +422,7 @@ export default function ListingDetailPage() {
                     {listing.address ? (
                       <>
                         <div>{listing.address}</div>
-                        <div>{listing.city}, {listing.state}</div>
+                        <div>{toTitleCase(listing.city || '')}, {(listing.state || '').toUpperCase()}</div>
                       </>
                     ) : (
                       <div>{listing.location}</div>
