@@ -26,6 +26,8 @@ export default function EditListingPage() {
     city: '',
     state: '',
     price: '',
+    bedrooms: '',
+    property: '',
     contactName: '',
     contactEmail: '',
     contactPhone: '',
@@ -114,6 +116,8 @@ export default function EditListingPage() {
           city: listing.city || '',
           state: listing.state || '',
           price: listing.price.toString(),
+          bedrooms: listing.bedrooms ? listing.bedrooms.toString() : '',
+          property: listing.property || '',
           contactName: listing.contactName,
           contactEmail: listing.contactEmail,
           contactPhone: listing.contactPhone,
@@ -435,7 +439,6 @@ export default function EditListingPage() {
                   required
                 />
               </div>
-              
               <div>
                 <label className="block text-blue-200 font-medium mb-2">
                   Price (per month) *
@@ -450,6 +453,50 @@ export default function EditListingPage() {
                   placeholder="Enter monthly rent"
                   required
                 />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-blue-200 font-medium mb-2">
+                  Bedrooms *
+                </label>
+                <select
+                  name="bedrooms"
+                  value={formData.bedrooms}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white"
+                  required
+                >
+                  <option value="">Select bedrooms</option>
+                  <option value="1">1 Bedroom</option>
+                  <option value="2">2 Bedrooms</option>
+                  <option value="3">3 Bedrooms</option>
+                  <option value="4">4 Bedrooms</option>
+                  <option value="5">5 Bedrooms</option>
+                  <option value="6">6+ Bedrooms</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-blue-200 font-medium mb-2">
+                  Housing Type *
+                </label>
+                <select
+                  name="property"
+                  value={formData.property}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white"
+                  required
+                >
+                  <option value="">Select type</option>
+                  <option value="Apartment">Apartment</option>
+                  <option value="House">House</option>
+                  <option value="Studio">Studio</option>
+                  <option value="Townhouse">Townhouse</option>
+                  <option value="Condo">Condo</option>
+                  <option value="Duplex">Duplex</option>
+                  <option value="Loft">Loft</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
             </div>
 
