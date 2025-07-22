@@ -12,6 +12,14 @@ try {
   throw error;
 }
 
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '20mb', // Increase as needed
+    },
+  },
+};
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ listingId: string }> }
