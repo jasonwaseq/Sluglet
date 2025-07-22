@@ -70,14 +70,14 @@ export default function EditListingPage() {
   async function uploadImageToSupabase(file: File): Promise<string> {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-    const { data, error } = await supabaseClient!.storage
+    const { error } = await supabaseClient!.storage
       .from('listing-images')
       .upload(fileName, file);
     if (error) throw error;
-    const { data: publicData } = supabaseClient!.storage
+    const { data } = supabaseClient!.storage
       .from('listing-images')
       .getPublicUrl(fileName);
-    return publicData.publicUrl;
+    return data.publicUrl;
   }
 
   // Check authentication and ownership on component mount
