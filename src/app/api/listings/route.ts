@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Listing } from '@prisma/client';
 
 let prisma: PrismaClient;
 
@@ -20,6 +20,10 @@ export async function GET(request: NextRequest) {
     const city = searchParams.get('city');
     const state = searchParams.get('state');
     const price = searchParams.get('price');
+    const property = searchParams.get('property');
+    const bedrooms = searchParams.get('bedrooms');
+    const amenities = searchParams.get('amenities'); // comma-separated
+    const duration = searchParams.get('duration'); // format: YYYY-MM-DD-YYYY-MM-DD
 
     const whereClause: Record<string, unknown> = {};
 
@@ -40,6 +44,37 @@ export async function GET(request: NextRequest) {
       };
     }
 
+    if (property) {
+      whereClause.property = property;
+    }
+
+    if (bedrooms) {
+      // Support "6+" as 6 or more
+      if (bedrooms === '6') {
+        whereClause.bedrooms = { gte: 6 };
+      } else {
+        whereClause.bedrooms = parseInt(bedrooms);
+      }
+    }
+
+    // Date range filter (duration)
+    if (duration) {
+      // Format: YYYY-MM-DD-YYYY-MM-DD
+      const [from, to] = duration.split('-');
+      if (from && to) {
+        whereClause.AND = [
+          { availableFrom: { lte: to } }, // listing available from before or on 'to'
+          { availableTo: { gte: from } }   // listing available to after or on 'from'
+        ];
+      }
+    }
+
+    // Amenity filter (must contain all selected amenities)
+    let amenityList: string[] = [];
+    if (amenities) {
+      amenityList = amenities.split(',').map(a => a.trim()).filter(Boolean);
+    }
+
     console.log('Database query whereClause:', whereClause);
     
     const listings = await prisma.listing.findMany({
@@ -56,10 +91,25 @@ export async function GET(request: NextRequest) {
       }
     });
     
-    console.log(`Found ${listings.length} listings from database`);
+    // Filter by amenities in-memory (since amenities is stored as JSON string)
+    let filteredListings = listings;
+    if (amenityList.length > 0) {
+      filteredListings = listings.filter((listing: Listing) => {
+        let listingAmenities: string[] = [];
+        try {
+          listingAmenities = typeof listing.amenities === 'string' ? JSON.parse(listing.amenities) : listing.amenities;
+        } catch {
+          listingAmenities = [];
+        }
+        // Must contain all selected amenities
+        return amenityList.every(a => listingAmenities.includes(a));
+      });
+    }
+
+    console.log(`Found ${filteredListings.length} listings from database`);
     
     // Parse images and amenities JSON for each listing
-    const listingsWithParsedData = listings.map((listing) => ({
+    const listingsWithParsedData = filteredListings.map((listing: Listing) => ({
       ...listing,
       images: listing.images ? JSON.parse(listing.images as string) : [],
       amenities: listing.amenities ? JSON.parse(listing.amenities as string) : []
