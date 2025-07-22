@@ -1,12 +1,68 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient, Listing } from '@prisma/client';
+import { PrismaClient } from '../../../../generated/prisma';
 
-let prisma: PrismaClient;
+const prisma = new PrismaClient();
 
-try {
-  prisma = new PrismaClient({
-    log: ['query', 'info', 'warn', 'error'],
-  });
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const {
+      title,
+      description,
+      price,
+      duration,
+      location,
+      imageUrl,
+      images,
+      contactName,
+      contactEmail,
+      contactPhone,
+      availableFrom,
+      amenities,
+      firebaseId
+    } = body;
+
+    // Validate required fields
+    if (!title || !description || !price || !duration || !location || 
+        !contactName || !contactEmail || !contactPhone || !availableFrom || !firebaseId) {
+      return NextResponse.json(
+        { error: 'Missing required fields' }, 
+        { status: 400 }
+      );
+    }
+
+    // Find user by firebaseId
+    const user = await prisma.user.findUnique({
+      where: { firebaseId }
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'User not found' }, 
+        { status: 404 }
+      );
+    }
+
+    // Create listing
+    const listing = await prisma.listing.create({
+      data: {
+        title,
+        description,
+        price: parseInt(price),
+        duration,
+        location,
+        imageUrl: imageUrl || null,
+        images: images ? JSON.stringify(images) : null, // Store images as JSON string
+        amenities,
+        contactName,
+        contactEmail,
+        contactPhone,
+        availableFrom,
+        userId: user.id
+      }
+    });
+
+    return NextResponse.json({ listing }, { status: 201 });
   } catch (error) {
   console.error('Failed to initialize Prisma client:', error);
   throw error;
@@ -14,26 +70,23 @@ try {
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('GET /api/listings - Fetching from database');
-    
-    const { searchParams } = new URL(request.url);
-    const city = searchParams.get('city');
-    const state = searchParams.get('state');
-    const price = searchParams.get('price');
-    const property = searchParams.get('property');
-    const bedrooms = searchParams.get('bedrooms');
-    const amenities = searchParams.get('amenities'); // comma-separated
-    const duration = searchParams.get('duration'); // format: YYYY-MM-DD-YYYY-MM-DD
+    const { searchParams } = new URL(req.url);
+    const query = searchParams.get('q') || '';
+    const price = searchParams.get('price') || '';
+    const duration = searchParams.get('duration') || '';
 
     const whereClause: Record<string, unknown> = {};
 
-    // Apply filters
-    if (city) {
-      whereClause.city = { contains: city };
+    // Add search filters
+    if (query) {
+      whereClause.OR = [
+        { title: { contains: query, mode: 'insensitive' } },
+        { location: { contains: query, mode: 'insensitive' } }
+      ];
     }
 
-    if (state) {
-      whereClause.state = { contains: state };
+    if (location) {
+      whereClause.location = { contains: location, mode: 'insensitive' };
     }
 
     if (price) {
@@ -90,26 +143,9 @@ export async function GET(request: NextRequest) {
         createdAt: 'desc'
       }
     });
-    
-    // Filter by amenities in-memory (since amenities is stored as JSON string)
-    let filteredListings = listings;
-    if (amenityList.length > 0) {
-      filteredListings = listings.filter((listing: Listing) => {
-        let listingAmenities: string[] = [];
-        try {
-          listingAmenities = typeof listing.amenities === 'string' ? JSON.parse(listing.amenities) : listing.amenities;
-        } catch {
-          listingAmenities = [];
-        }
-        // Must contain all selected amenities
-        return amenityList.every(a => listingAmenities.includes(a));
-      });
-    }
 
-    console.log(`Found ${filteredListings.length} listings from database`);
-    
-    // Parse images and amenities JSON for each listing
-    const listingsWithParsedData = filteredListings.map((listing: Listing) => ({
+    // Parse images JSON for each listing
+    const listingsWithParsedImages = listings.map(listing => ({
       ...listing,
       images: listing.images ? JSON.parse(listing.images as string) : [],
       amenities: listing.amenities ? JSON.parse(listing.amenities as string) : []
