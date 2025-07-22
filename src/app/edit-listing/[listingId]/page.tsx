@@ -6,7 +6,6 @@ import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/lib/supabase';
 import { supabaseClient } from '@/lib/supabase';
 import Image from 'next/image';
-import CityStateAutocomplete from '@/components/CityStateAutocomplete';
 import AddressAutocomplete from '@/components/AddressAutocomplete';
 
 interface UploadedImage {
