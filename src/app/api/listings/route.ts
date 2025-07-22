@@ -1,68 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '../../../../generated/prisma';
+import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+let prisma: PrismaClient;
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const {
-      title,
-      description,
-      price,
-      duration,
-      location,
-      imageUrl,
-      images,
-      contactName,
-      contactEmail,
-      contactPhone,
-      availableFrom,
-      amenities,
-      firebaseId
-    } = body;
-
-    // Validate required fields
-    if (!title || !description || !price || !duration || !location || 
-        !contactName || !contactEmail || !contactPhone || !availableFrom || !firebaseId) {
-      return NextResponse.json(
-        { error: 'Missing required fields' }, 
-        { status: 400 }
-      );
-    }
-
-    // Find user by firebaseId
-    const user = await prisma.user.findUnique({
-      where: { firebaseId }
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'User not found' }, 
-        { status: 404 }
-      );
-    }
-
-    // Create listing
-    const listing = await prisma.listing.create({
-      data: {
-        title,
-        description,
-        price: parseInt(price),
-        duration,
-        location,
-        imageUrl: imageUrl || null,
-        images: images ? JSON.stringify(images) : null, // Store images as JSON string
-        amenities,
-        contactName,
-        contactEmail,
-        contactPhone,
-        availableFrom,
-        userId: user.id
-      }
-    });
-
-    return NextResponse.json({ listing }, { status: 201 });
+try {
+  prisma = new PrismaClient({
+    log: ['query', 'info', 'warn', 'error'],
+  });
   } catch (error) {
   console.error('Failed to initialize Prisma client:', error);
   throw error;
@@ -78,23 +22,22 @@ export const config = {
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const query = searchParams.get('q') || '';
-    const price = searchParams.get('price') || '';
-    const duration = searchParams.get('duration') || '';
+    console.log('GET /api/listings - Fetching from database');
+    
+    const { searchParams } = new URL(request.url);
+    const city = searchParams.get('city');
+    const state = searchParams.get('state');
+    const price = searchParams.get('price');
 
     const whereClause: Record<string, unknown> = {};
 
-    // Add search filters
-    if (query) {
-      whereClause.OR = [
-        { title: { contains: query, mode: 'insensitive' } },
-        { location: { contains: query, mode: 'insensitive' } }
-      ];
+    // Apply filters
+    if (city) {
+      whereClause.city = { contains: city };
     }
 
-    if (location) {
-      whereClause.location = { contains: location, mode: 'insensitive' };
+    if (state) {
+      whereClause.state = { contains: state };
     }
 
     if (price) {
@@ -103,37 +46,6 @@ export async function GET(request: NextRequest) {
           gte: min,
           ...(max && { lte: max })
       };
-    }
-
-    if (property) {
-      whereClause.property = property;
-    }
-
-    if (bedrooms) {
-      // Support "6+" as 6 or more
-      if (bedrooms === '6') {
-        whereClause.bedrooms = { gte: 6 };
-      } else {
-        whereClause.bedrooms = parseInt(bedrooms);
-      }
-    }
-
-    // Date range filter (duration)
-    if (duration) {
-      // Format: YYYY-MM-DD-YYYY-MM-DD
-      const [from, to] = duration.split('-');
-      if (from && to) {
-        whereClause.AND = [
-          { availableFrom: { lte: to } }, // listing available from before or on 'to'
-          { availableTo: { gte: from } }   // listing available to after or on 'from'
-        ];
-      }
-    }
-
-    // Amenity filter (must contain all selected amenities)
-    let amenityList: string[] = [];
-    if (amenities) {
-      amenityList = amenities.split(',').map(a => a.trim()).filter(Boolean);
     }
 
     console.log('Database query whereClause:', whereClause);
@@ -151,9 +63,11 @@ export async function GET(request: NextRequest) {
         createdAt: 'desc'
       }
     });
-
-    // Parse images JSON for each listing
-    const listingsWithParsedImages = listings.map(listing => ({
+    
+    console.log(`Found ${listings.length} listings from database`);
+    
+    // Parse images and amenities JSON for each listing
+    const listingsWithParsedData = listings.map((listing) => ({
       ...listing,
       images: listing.images ? JSON.parse(listing.images as string) : [],
       amenities: listing.amenities ? JSON.parse(listing.amenities as string) : []

@@ -124,9 +124,15 @@ export default function AddressAutocomplete({
     onAddressSelect(address, e.target.value, state);
   };
 
+  const US_STATE_CODES = [
+    "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"
+  ];
+
   const handleStateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setState(e.target.value);
-    onAddressSelect(address, city, e.target.value);
+    let value = e.target.value.toUpperCase().replace(/[^A-Z]/g, '');
+    if (value.length > 2) value = value.slice(0, 2);
+    setState(value);
+    onAddressSelect(address, city, value);
   };
 
   return (
@@ -164,11 +170,15 @@ export default function AddressAutocomplete({
           <label className="block text-blue-200 mb-2">State *</label>
           <input
             type="text"
-            placeholder="State..."
+            placeholder="State (e.g., CA)"
             value={state}
             onChange={handleStateChange}
+            maxLength={2}
             className="w-full px-4 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300"
           />
+          {state && !US_STATE_CODES.includes(state) && (
+            <p className="text-red-400 text-xs mt-1">Please enter a valid 2-letter US state code.</p>
+          )}
         </div>
       </div>
     </div>
