@@ -68,6 +68,9 @@ function ListingsPageContent() {
   
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [page, setPage] = useState(1);
+  const [limit] = useState(20);
+  const [totalCount, setTotalCount] = useState(0);
 
   useEffect(() => {
     const fetchListings = async () => {
@@ -145,6 +148,8 @@ function ListingsPageContent() {
         if (amenities) params.append('amenities', amenities);
         if (propertyParam) params.append('property', propertyParam);
         if (bedroomsParam) params.append('bedrooms', bedroomsParam);
+        params.append('page', page.toString());
+        params.append('limit', limit.toString());
 
         console.log('API request URL:', `/api/listings?${params.toString()}`);
         const response = await fetch(`/api/listings?${params.toString()}`);
@@ -154,6 +159,7 @@ function ListingsPageContent() {
           const data = await response.json();
           console.log('API response data:', data);
           setFilteredListings(data.listings || []);
+          setTotalCount(data.totalCount || 0);
         } else {
           const errorData = await response.text();
           console.error('Failed to fetch listings. Status:', response.status);
@@ -170,7 +176,7 @@ function ListingsPageContent() {
     };
 
     fetchListings();
-  }, [searchParams]);
+  }, [searchParams, page]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -240,6 +246,13 @@ function ListingsPageContent() {
     return `${fromFormatted} - ${toFormatted}`;
   };
 
+  // Pagination controls
+  const totalPages = Math.ceil(totalCount / limit);
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-blue-900 flex items-center justify-center">
@@ -298,7 +311,6 @@ function ListingsPageContent() {
               {/* City and State with Autocomplete */}
               <div className="lg:col-span-4">
                 <CityStateAutocomplete
-                  key={`${city}-${state}`}
                   onCitySelect={(selectedCity, selectedState) => {
                     setCity(selectedCity);
                     setState(selectedState);
@@ -411,6 +423,26 @@ function ListingsPageContent() {
 
       {/* Listings Grid */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-center mb-8 gap-2">
+            <button
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page === 1}
+              className="px-4 py-2 bg-blue-700 text-white rounded disabled:opacity-50"
+            >
+              Previous
+            </button>
+            <span className="px-4 py-2 text-white">Page {page} of {totalPages}</span>
+            <button
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page === totalPages}
+              className="px-4 py-2 bg-blue-700 text-white rounded disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        )}
         {filteredListings.length === 0 ? (
           <div className="text-center py-16">
             <div className="w-24 h-24 mx-auto mb-6 bg-blue-800 rounded-full flex items-center justify-center">

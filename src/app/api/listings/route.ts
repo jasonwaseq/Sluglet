@@ -37,11 +37,11 @@ export async function GET(request: NextRequest) {
 
     // Apply filters
     if (city) {
-      whereClause.city = { contains: city };
+      whereClause.city = { contains: city.trim(), mode: 'insensitive' };
     }
 
     if (state) {
-      whereClause.state = { contains: state };
+      whereClause.state = { contains: state.trim(), mode: 'insensitive' };
     }
 
     if (price) {
@@ -85,6 +85,11 @@ export async function GET(request: NextRequest) {
 
     console.log('Database query whereClause:', whereClause);
     
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '20', 10);
+    const skip = (page - 1) * limit;
+
+    const totalCount = await prisma.listing.count({ where: whereClause });
     const listings = await prisma.listing.findMany({
       where: whereClause,
       include: {
@@ -96,7 +101,9 @@ export async function GET(request: NextRequest) {
       },
       orderBy: {
         createdAt: 'desc'
-      }
+      },
+      skip,
+      take: limit
     });
     
     // Filter by amenities in-memory (since amenities is stored as JSON string)
@@ -123,7 +130,7 @@ export async function GET(request: NextRequest) {
       amenities: listing.amenities ? JSON.parse(listing.amenities as string) : []
     }));
 
-    return NextResponse.json({ listings: listingsWithParsedData });
+    return NextResponse.json({ listings: listingsWithParsedData, totalCount });
   } catch (error) {
     console.error('Error fetching listings:', error);
     return NextResponse.json(
