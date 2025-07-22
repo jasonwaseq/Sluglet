@@ -65,8 +65,10 @@ export async function GET(request: NextRequest) {
       filters.push({ user: { supabaseId } });
     }
     if (duration) {
-      const [from, to] = duration.split('-');
-      if (from && to) {
+      const parts = duration.split('-');
+      if (parts.length === 6) {
+        const from = `${parts[0]}-${parts[1]}-${parts[2]}`;
+        const to = `${parts[3]}-${parts[4]}-${parts[5]}`;
         filters.push({ availableFrom: { lte: from } });
         filters.push({ availableTo: { gte: to } });
       }

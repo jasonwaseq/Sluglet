@@ -6,6 +6,8 @@ import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/lib/supabase';
 import { supabaseClient } from '@/lib/supabase';
 import Image from 'next/image';
+import CityStateAutocomplete from '@/components/CityStateAutocomplete';
+import AddressAutocomplete from '@/components/AddressAutocomplete';
 
 interface UploadedImage {
   id: string;
@@ -24,11 +26,14 @@ export default function EditListingPage() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    address: '',
     city: '',
     state: '',
-    price: '',
     bedrooms: '',
     property: '',
+    latitude: undefined as number | undefined,
+    longitude: undefined as number | undefined,
+    price: '',
     contactName: '',
     contactEmail: '',
     contactPhone: '',
@@ -128,11 +133,14 @@ export default function EditListingPage() {
         setFormData({
           title: listing.title,
           description: listing.description,
+          address: listing.address || '',
           city: listing.city || '',
           state: listing.state || '',
-          price: listing.price.toString(),
           bedrooms: listing.bedrooms ? listing.bedrooms.toString() : '',
           property: listing.property || '',
+          latitude: listing.latitude,
+          longitude: listing.longitude,
+          price: listing.price.toString(),
           contactName: listing.contactName,
           contactEmail: listing.contactEmail,
           contactPhone: listing.contactPhone,
@@ -305,8 +313,17 @@ export default function EditListingPage() {
 
       // Upload images and get thumbnail
       const imageUrls = await uploadImages();
-      const thumbnailIndex = [...existingImages, ...uploadedImages].findIndex(img => img.isThumbnail);
-      const thumbnailUrl = imageUrls[thumbnailIndex];
+      // Find the selected thumbnail id
+      const allImages = [...existingImages, ...uploadedImages];
+      const thumbnail = allImages.find(img => img.isThumbnail);
+      let thumbnailUrl = imageUrls[0];
+      if (thumbnail) {
+        // Find the index of the thumbnail in allImages, and use that index in imageUrls
+        const thumbIndex = allImages.findIndex(img => img.id === thumbnail.id);
+        if (thumbIndex !== -1 && thumbIndex < imageUrls.length) {
+          thumbnailUrl = imageUrls[thumbIndex];
+        }
+      }
 
       // Update listing data
       const listingData = {
@@ -515,30 +532,21 @@ export default function EditListingPage() {
 
             <div>
               <label className="block text-blue-200 font-medium mb-2">
-                City *
+                Address, City & State *
               </label>
-              <input
-                type="text"
-                name="city"
-                value={formData.city}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300"
-                placeholder="City"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-blue-200 font-medium mb-2">
-                State *
-              </label>
-              <input
-                type="text"
-                name="state"
-                value={formData.state}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300"
-                placeholder="State"
-                required
+              <AddressAutocomplete
+                onAddressSelect={(address, city, state, lat, lng) => setFormData(prev => ({
+                  ...prev,
+                  address,
+                  city,
+                  state,
+                  latitude: lat,
+                  longitude: lng
+                }))}
+                initialAddress={formData.address}
+                initialCity={formData.city}
+                initialState={formData.state}
+                className="w-full"
               />
             </div>
 
