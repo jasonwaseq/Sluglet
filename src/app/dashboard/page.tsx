@@ -109,11 +109,6 @@ export default function Dashboard() {
     );
   };
 
-  const handleCityStateSelect = (selectedCity: string, selectedState: string) => {
-    setCity(selectedCity);
-    setState(selectedState);
-  };
-
   const [profilePicture, setProfilePicture] = useState<string | null>(null);
   const { user, signOut } = useAuth();
 
