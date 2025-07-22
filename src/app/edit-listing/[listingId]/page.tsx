@@ -323,13 +323,17 @@ export default function EditListingPage() {
         body: JSON.stringify(listingData),
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
-
+      let errorMsg = 'Failed to update listing';
       if (!response.ok) {
-        const errorData = await response.json();
-        console.log('Error response:', errorData);
-        throw new Error(errorData.error || 'Failed to update listing');
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          errorMsg = errorData.error || errorMsg;
+        } else {
+          const text = await response.text();
+          errorMsg = text || errorMsg;
+        }
+        throw new Error(errorMsg);
       }
 
       setSuccess('Listing updated successfully!');
