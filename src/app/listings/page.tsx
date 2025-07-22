@@ -29,6 +29,8 @@ interface Listing {
   user: {
     email: string;
   };
+  property?: string;
+  bedrooms?: number;
 }
 
 function ListingsPageContent() {
@@ -43,6 +45,10 @@ function ListingsPageContent() {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  
+  // Add state for property and bedrooms
+  const [property, setProperty] = useState('');
+  const [bedrooms, setBedrooms] = useState('');
 
   // Available amenities options
   const availableAmenities = [
@@ -72,9 +78,11 @@ function ListingsPageContent() {
         const price = searchParams.get('price') || '';
         const duration = searchParams.get('duration') || '';
         const amenities = searchParams.get('amenities') || '';
+        const propertyParam = searchParams.get('property') || '';
+        const bedroomsParam = searchParams.get('bedrooms') || '';
 
         // Check if there are any URL parameters
-        const hasUrlParams = cityParam || stateParam || price || duration || amenities;
+        const hasUrlParams = cityParam || stateParam || price || duration || amenities || propertyParam || bedroomsParam;
         
         if (hasUrlParams) {
           // Only populate form if there are URL parameters
@@ -114,6 +122,8 @@ function ListingsPageContent() {
           if (amenities) {
             setSelectedAmenities(amenities.split(','));
           }
+          setProperty(propertyParam || '');
+          setBedrooms(bedroomsParam || '');
         } else {
           // Clear all form fields when no URL parameters
           console.log('Clearing form fields - no URL parameters found');
@@ -124,6 +134,8 @@ function ListingsPageContent() {
           setStartDate(null);
           setEndDate(null);
           setSelectedAmenities([]);
+          setProperty('');
+          setBedrooms('');
         }
 
         if (cityParam) params.append('city', cityParam);
@@ -131,6 +143,8 @@ function ListingsPageContent() {
         if (price) params.append('price', price);
         if (duration) params.append('duration', duration);
         if (amenities) params.append('amenities', amenities);
+        if (propertyParam) params.append('property', propertyParam);
+        if (bedroomsParam) params.append('bedrooms', bedroomsParam);
 
         console.log('API request URL:', `/api/listings?${params.toString()}`);
         const response = await fetch(`/api/listings?${params.toString()}`);
@@ -178,6 +192,8 @@ function ListingsPageContent() {
     if (selectedAmenities.length > 0) {
       params.append('amenities', selectedAmenities.join(','));
     }
+    if (property) params.append('property', property);
+    if (bedrooms) params.append('bedrooms', bedrooms);
     
     router.push(`/listings?${params.toString()}`);
   };
@@ -233,9 +249,9 @@ function ListingsPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-blue-900">
       {/* Navigation Bar */}
-      <nav className="bg-blue-900 shadow-sm border-b border-gray-100">
+      <nav className="bg-blue-800 shadow-sm border-b border-blue-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -256,7 +272,7 @@ function ListingsPageContent() {
 
             {/* Search Results Info */}
             <div className="flex-1 text-center">
-              <h1 className="text-lg font-medium text-gray-900">
+              <h1 className="text-lg font-medium text-white">
                 {filteredListings.length} {filteredListings.length === 1 ? 'listing' : 'listings'} found
               </h1>
             </div>
@@ -265,7 +281,7 @@ function ListingsPageContent() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push('/create-listing')}
-                className="px-6 py-2 bg-yellow-400 hover:bg-yellow-300 text-gray-900 rounded-lg transition-all duration-200 font-semibold shadow-sm hover:shadow-md"
+                className="px-6 py-2 bg-yellow-400 hover:bg-yellow-300 text-blue-900 rounded-lg transition-all duration-200 font-semibold shadow-sm hover:shadow-md"
               >
                 Create Listing
               </button>
@@ -275,9 +291,9 @@ function ListingsPageContent() {
       </nav>
 
       {/* Search Bar */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 py-8">
+      <div className="bg-blue-900 py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <form onSubmit={handleSearch} className="bg-blue-900 rounded-lg p-6 shadow-lg">
+          <form onSubmit={handleSearch} className="bg-blue-800 rounded-lg p-6 shadow-lg">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 mb-4">
               {/* City and State with Autocomplete */}
               <div className="lg:col-span-4">
@@ -293,6 +309,41 @@ function ListingsPageContent() {
                 />
               </div>
               
+              {/* Property Type Dropdown */}
+              <div className="lg:col-span-2">
+                <select
+                  value={property}
+                  onChange={e => setProperty(e.target.value)}
+                  className="w-full px-2 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white text-sm"
+                >
+                  <option value="">All Housing Types</option>
+                  <option value="Apartment">Apartment</option>
+                  <option value="House">House</option>
+                  <option value="Studio">Studio</option>
+                  <option value="Townhouse">Townhouse</option>
+                  <option value="Condo">Condo</option>
+                  <option value="Duplex">Duplex</option>
+                  <option value="Loft">Loft</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              {/* Bedrooms Dropdown */}
+              <div className="lg:col-span-2">
+                <select
+                  value={bedrooms}
+                  onChange={e => setBedrooms(e.target.value)}
+                  className="w-full px-2 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white text-sm"
+                >
+                  <option value="">Any Bedrooms</option>
+                  <option value="1">1 Bedroom</option>
+                  <option value="2">2 Bedrooms</option>
+                  <option value="3">3 Bedrooms</option>
+                  <option value="4">4 Bedrooms</option>
+                  <option value="5">5 Bedrooms</option>
+                  <option value="6">6+ Bedrooms</option>
+                </select>
+              </div>
+              
               {/* Price Range */}
               <div className="lg:col-span-2 flex gap-2">
                 <input
@@ -301,7 +352,7 @@ function ListingsPageContent() {
                   value={priceMin}
                   onChange={(e) => setPriceMin(e.target.value)}
                   min="0"
-                  className="w-20 px-2 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-600 text-white placeholder-blue-300 text-sm"
+                  className="w-20 px-2 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300 text-sm"
                 />
                 <input
                   type="number"
@@ -309,7 +360,7 @@ function ListingsPageContent() {
                   value={priceMax}
                   onChange={(e) => setPriceMax(e.target.value)}
                   min="0"
-                  className="w-20 px-2 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-600 text-white placeholder-blue-300 text-sm"
+                  className="w-20 px-2 py-3 border border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-blue-700 text-white placeholder-blue-300 text-sm"
                 />
               </div>
               
@@ -329,7 +380,7 @@ function ListingsPageContent() {
             
             {/* Amenity Filters */}
             <div className="mt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Amenities</h3>
+              <h3 className="text-lg font-semibold text-white mb-4">Amenities</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                 {availableAmenities.map((amenity) => (
                   <label key={amenity} className="flex items-center space-x-2 cursor-pointer">
@@ -337,9 +388,9 @@ function ListingsPageContent() {
                       type="checkbox"
                       checked={selectedAmenities.includes(amenity)}
                       onChange={() => handleAmenityToggle(amenity)}
-                      className="w-4 h-4 text-yellow-500 bg-blue-600 border-blue-600 rounded focus:ring-yellow-400 focus:ring-2"
+                      className="w-4 h-4 text-yellow-500 bg-blue-700 border-blue-600 rounded focus:ring-yellow-400 focus:ring-2"
                     />
-                    <span className="text-gray-700 text-sm">{amenity}</span>
+                    <span className="text-blue-100 text-sm">{amenity}</span>
                   </label>
                 ))}
               </div>
@@ -362,13 +413,13 @@ function ListingsPageContent() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {filteredListings.length === 0 ? (
           <div className="text-center py-16">
-            <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
-              <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-24 h-24 mx-auto mb-6 bg-blue-800 rounded-full flex items-center justify-center">
+              <svg className="w-12 h-12 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-2">No listings found</h2>
-            <p className="text-gray-600">Try adjusting your search criteria</p>
+            <h2 className="text-2xl font-semibold text-white mb-2">No listings found</h2>
+            <p className="text-blue-200">Try adjusting your search criteria</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -376,7 +427,7 @@ function ListingsPageContent() {
               <div
                 key={listing.id}
                 onClick={() => handleListingClick(listing.id)}
-                className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden border border-gray-100 hover:border-gray-200"
+                className="group bg-blue-800 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden border border-blue-700 hover:border-blue-500"
               >
                 <div className="relative h-56 overflow-hidden">
                   <Image
@@ -392,27 +443,43 @@ function ListingsPageContent() {
                     </div>
                   )}
                   {/* Price badge */}
-                  <div className="absolute bottom-3 left-3 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-sm font-bold shadow-lg">
+                  <div className="absolute bottom-3 left-3 bg-yellow-400 text-blue-900 px-3 py-1 rounded-full text-sm font-bold shadow-lg">
                     ${listing.price}/mo
                   </div>
                 </div>
                 
                 <div className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-1 group-hover:text-blue-600 transition-colors">
+                  <h3 className="text-lg font-semibold text-white mb-2 line-clamp-1 group-hover:text-yellow-400 transition-colors">
                     {listing.title}
                   </h3>
-                  <p className="text-gray-600 mb-4 line-clamp-2 text-sm">
+                  <p className="text-blue-100 mb-4 line-clamp-2 text-sm">
                     {listing.description}
                   </p>
+
+                  {/* Property and Bedrooms */}
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    <span className="text-xs bg-blue-700 text-blue-100 px-2 py-1 rounded-full">
+                       {listing.property || 'N/A'}
+                    </span>
+                    <span className="text-xs bg-blue-700 text-blue-100 px-2 py-1 rounded-full">
+                       {listing.bedrooms !== undefined ? listing.bedrooms : 'N/A'} Bedroom{listing.bedrooms === 1 ? '' : 's'}
+                    </span>
+                  </div>
                   
-                  <div className="flex items-center text-gray-500 text-sm mb-3">
-                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                    </svg>
+                  <div className="flex items-center text-blue-200 text-sm mb-3">
                     {listing.city}, {listing.state}
                   </div>
                   
-                  <div className="flex items-center text-gray-500 text-sm">
+                  {/* Address */}
+                  <div className="flex items-center text-blue-200 text-sm mb-3">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21c-4.418 0-8-5.373-8-10A8 8 0 1 1 20 11c0 4.627-3.582 10-8 10z" />
+                      <circle cx="12" cy="11" r="3" fill="currentColor" />
+                    </svg>
+                    {listing.address ? listing.address : 'Address not provided'}
+                  </div>
+                  
+                  <div className="flex items-center text-blue-200 text-sm">
                     <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
                     </svg>
@@ -442,13 +509,13 @@ function ListingsPageContent() {
                             {amenitiesArray.slice(0, 2).map((amenity, index) => (
                               <span
                                 key={index}
-                                className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full"
+                                className="text-xs bg-blue-700 text-blue-100 px-2 py-1 rounded-full"
                               >
                                 {amenity}
                               </span>
                             ))}
                             {amenitiesArray.length > 2 && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-blue-300">
                                 +{amenitiesArray.length - 2} more
                               </span>
                             )}

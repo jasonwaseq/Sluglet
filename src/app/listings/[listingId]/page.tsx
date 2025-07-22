@@ -23,6 +23,11 @@ interface Listing {
     id: string;
     email: string;
   };
+  property?: string;
+  bedrooms?: number;
+  address?: string; // Added address to the interface
+  city?: string; // Added city to the interface
+  state?: string; // Added state to the interface
 }
 
 export default function ListingDetailPage() {
@@ -343,6 +348,16 @@ export default function ListingDetailPage() {
               <p className="text-blue-200 leading-relaxed">
                 {listing.description}
               </p>
+              <div className="mt-4 flex flex-col sm:flex-row gap-4">
+                <div className="bg-blue-700 rounded-lg px-4 py-2">
+                  <span className="font-medium text-blue-200">House Type: </span>
+                  <span className="text-blue-100">{listing.property || 'N/A'}</span>
+                </div>
+                <div className="bg-blue-700 rounded-lg px-4 py-2">
+                  <span className="font-medium text-blue-200">Bedrooms: </span>
+                  <span className="text-blue-100">{listing.bedrooms !== undefined ? listing.bedrooms : 'N/A'}</span>
+                </div>
+              </div>
             </div>
 
             {/* Details Grid */}
@@ -398,7 +413,16 @@ export default function ListingDetailPage() {
                 </div>
                 <div className="bg-blue-700 p-4 rounded-lg">
                   <span className="font-medium text-blue-200">Location</span>
-                  <p className="text-blue-300">{listing.location}</p>
+                  <p className="text-blue-300">
+                    {listing.address ? (
+                      <>
+                        <p>{listing.address}</p>
+                        <p>{listing.city}, {listing.state}</p>
+                      </>
+                    ) : (
+                      <p>{listing.location}</p>
+                    )}
+                  </p>
                 </div>
                 <div className="bg-blue-700 p-4 rounded-lg">
                   <span className="font-medium text-blue-200">Listed</span>
