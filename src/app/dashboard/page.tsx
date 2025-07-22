@@ -1,5 +1,4 @@
-"use client";
-
+import { Suspense } from 'react';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
@@ -7,7 +6,15 @@ import DateRangePicker from '@/components/DateRangePicker';
 import CityStateAutocomplete from '@/components/CityStateAutocomplete';
 import { useAuth } from '@/components/AuthProvider';
 
-export default function Dashboard() {
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Dashboard />
+    </Suspense>
+  );
+}
+
+function Dashboard() {
   // Search form state (match listings page)
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
