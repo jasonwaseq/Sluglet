@@ -259,7 +259,7 @@ function ListingsPageContent() {
   }
 
   // Helper to ensure amenities is always an array
-  function getAmenitiesArray(amenities: any): string[] {
+  function getAmenitiesArray(amenities: unknown): string[] {
     if (Array.isArray(amenities)) return amenities;
     if (typeof amenities === 'string') {
       try {
@@ -539,7 +539,7 @@ function ListingsPageContent() {
                   
                   {/* Show some amenities if available */}
                   {(() => {
-                    let amenitiesArray = getAmenitiesArray(listing.amenities);
+                    const amenitiesArray = getAmenitiesArray(listing.amenities);
                     if (!Array.isArray(amenitiesArray) || amenitiesArray.length === 0) {
                       return null;
                     }
