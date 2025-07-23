@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     const fileExt = file.name.split('.').pop();
     const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
 
-    const { data, error } = await supabaseAdmin.storage
+    const { error } = await supabaseAdmin.storage
       .from('listing-images')
       .upload(fileName, buffer, {
         contentType: file.type,

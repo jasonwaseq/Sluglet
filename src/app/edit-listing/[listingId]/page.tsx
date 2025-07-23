@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/lib/supabase';
-import { supabaseClient } from '@/lib/supabase';
 import Image from 'next/image';
 import AddressAutocomplete from '@/components/AddressAutocomplete';
 
