@@ -114,8 +114,22 @@ function Dashboard() {
                         priceMax ? `0-${priceMax}` : '';
       if (priceRange) params.append('price', priceRange);
     }
+    function formatDateLocal(date: Date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
     if (startDate && endDate) {
-      const durationRange = `${startDate.toISOString().split('T')[0]}-${endDate.toISOString().split('T')[0]}`;
+      const durationRange = `${formatDateLocal(startDate)}-${formatDateLocal(endDate)}`;
+      params.append('duration', durationRange);
+    } else if (startDate) {
+      // If only start date is selected, search for listings available on that date
+      const durationRange = `${formatDateLocal(startDate)}-${formatDateLocal(startDate)}`;
+      params.append('duration', durationRange);
+    } else if (endDate) {
+      // If only end date is selected, search for listings that end on or after that date
+      const durationRange = `1900-01-01-${formatDateLocal(endDate)}`;
       params.append('duration', durationRange);
     }
     if (selectedAmenities.length > 0) {
@@ -316,7 +330,6 @@ function Dashboard() {
               {/* Date Range */}
               <div className="lg:col-span-3">
                 <DateRangePicker
-                  key={`${startDate?.toISOString()}-${endDate?.toISOString()}`}
                   startDate={startDate}
                   endDate={endDate}
                   onStartDateChange={setStartDate}

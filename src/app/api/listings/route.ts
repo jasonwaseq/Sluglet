@@ -69,6 +69,9 @@ export async function GET(request: NextRequest) {
       if (parts.length === 6) {
         const from = `${parts[0]}-${parts[1]}-${parts[2]}`;
         const to = `${parts[3]}-${parts[4]}-${parts[5]}`;
+        console.log('Date filter - search from:', from, 'to:', to);
+        // A listing should be available for the entire search period
+        // availableFrom <= search_start_date AND availableTo >= search_end_date
         filters.push({ availableFrom: { lte: from } });
         filters.push({ availableTo: { gte: to } });
       }
@@ -98,6 +101,17 @@ export async function GET(request: NextRequest) {
       take: limit
     });
     
+    console.log(`Found ${listings.length} listings from database`);
+    
+    // Debug: Log listing dates to check filtering
+    if (duration) {
+      console.log('=== Date Filtering Debug ===');
+      listings.forEach((listing, index) => {
+        console.log(`Listing ${index + 1}: availableFrom=${listing.availableFrom}, availableTo=${listing.availableTo}`);
+      });
+      console.log('=== End Debug ===');
+    }
+    
     // Filter by amenities in-memory (since amenities is stored as JSON string)
     let filteredListings = listings;
     if (amenities) {
@@ -114,7 +128,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    console.log(`Found ${filteredListings.length} listings from database`);
+    console.log(`Found ${filteredListings.length} listings after amenities filtering`);
     
     // Parse images and amenities JSON for each listing
     const listingsWithParsedData = filteredListings.map((listing: Listing) => ({

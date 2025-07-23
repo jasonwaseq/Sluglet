@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 import { supabase } from '@/lib/supabase';
-import { supabaseClient } from '@/lib/supabase';
 import Image from 'next/image';
 import AddressAutocomplete from '@/components/AddressAutocomplete';
 
@@ -72,16 +71,22 @@ export default function EditListingPage() {
 
   // Add the uploadImageToSupabase helper
   async function uploadImageToSupabase(file: File): Promise<string> {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
-    const { error } = await supabaseClient!.storage
-      .from('listing-images')
-      .upload(fileName, file);
-    if (error) throw error;
-    const { data } = supabaseClient!.storage
-      .from('listing-images')
-      .getPublicUrl(fileName);
-    return data.publicUrl;
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch('/api/upload-image', {
+      method: 'POST',
+      body: formData,
+    });
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error('Upload failed: No response from server');
+    }
+    if (!response.ok) {
+      throw new Error((data && data.error) || 'Failed to upload image');
+    }
+    return data.url;
   }
 
   // Check authentication and ownership on component mount
