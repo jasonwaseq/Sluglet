@@ -330,8 +330,14 @@ export default function EditListingPage() {
       }
 
       // Update listing data
+      let amenitiesArray: string | string[] = formData.amenities;
+      if (typeof amenitiesArray === 'string') {
+        // If amenities is a comma-separated string, split it
+        amenitiesArray = (amenitiesArray as string).split(',').map((a: string) => a.trim()).filter(Boolean);
+      }
       const listingData = {
         ...formData,
+        amenities: amenitiesArray,
         city: formData.city.toLowerCase(),
         state: formData.state.toLowerCase(),
         price: parseInt(formData.price),
