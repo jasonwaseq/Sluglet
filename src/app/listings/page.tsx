@@ -258,6 +258,20 @@ function ListingsPageContent() {
     return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
   }
 
+  // Helper to ensure amenities is always an array
+  function getAmenitiesArray(amenities: any): string[] {
+    if (Array.isArray(amenities)) return amenities;
+    if (typeof amenities === 'string') {
+      try {
+        const arr = JSON.parse(amenities);
+        return Array.isArray(arr) ? arr : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-blue-900 flex items-center justify-center">
@@ -524,43 +538,30 @@ function ListingsPageContent() {
                   </div>
                   
                   {/* Show some amenities if available */}
-                  {listing.amenities && (
-                    <div className="mt-4 flex flex-wrap gap-1">
-                      {(() => {
-                        // Handle amenities that might be a string or array
-                        let amenitiesArray = listing.amenities;
-                        if (typeof listing.amenities === 'string') {
-                          try {
-                            amenitiesArray = JSON.parse(listing.amenities);
-                          } catch {
-                            amenitiesArray = [];
-                          }
-                        }
-                        
-                        if (!Array.isArray(amenitiesArray) || amenitiesArray.length === 0) {
-                          return null;
-                        }
-                        
-                        return (
-                          <>
-                            {amenitiesArray.slice(0, 2).map((amenity, index) => (
-                              <span
-                                key={index}
-                                className="text-xs bg-blue-700 text-blue-100 px-2 py-1 rounded-full"
-                              >
-                                {amenity}
-                              </span>
-                            ))}
-                            {amenitiesArray.length > 2 && (
-                              <span className="text-xs text-blue-300">
-                                +{amenitiesArray.length - 2} more
-                              </span>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </div>
-                  )}
+                  {(() => {
+                    let amenitiesArray = getAmenitiesArray(listing.amenities);
+                    if (!Array.isArray(amenitiesArray) || amenitiesArray.length === 0) {
+                      return null;
+                    }
+                    
+                    return (
+                      <>
+                        {amenitiesArray.slice(0, 2).map((amenity, index) => (
+                          <span
+                            key={index}
+                            className="text-xs bg-blue-700 text-blue-100 px-2 py-1 rounded-full"
+                          >
+                            {amenity}
+                          </span>
+                        ))}
+                        {amenitiesArray.length > 2 && (
+                          <span className="text-xs text-blue-300">
+                            +{amenitiesArray.length - 2} more
+                          </span>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             ))}

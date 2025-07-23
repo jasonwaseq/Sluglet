@@ -179,18 +179,18 @@ export default function ListingDetailPage() {
     );
   }
 
-  // Defensive amenities parsing
-  let amenities: string[] = [];
-  if (listing.amenities) {
-    if (Array.isArray(listing.amenities)) {
-      amenities = listing.amenities;
-    } else if (typeof listing.amenities === 'string') {
+  // Helper to ensure amenities is always an array
+  function getAmenitiesArray(amenities: any): string[] {
+    if (Array.isArray(amenities)) return amenities;
+    if (typeof amenities === 'string') {
       try {
-        amenities = JSON.parse(listing.amenities);
+        const arr = JSON.parse(amenities);
+        return Array.isArray(arr) ? arr : [];
       } catch {
-        amenities = [];
+        return [];
       }
     }
+    return [];
   }
 
   const images = getListingImages();
@@ -370,9 +370,9 @@ export default function ListingDetailPage() {
               {/* Amenities */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-4">Amenities</h3>
-                {amenities && amenities.length > 0 ? (
+                {getAmenitiesArray(listing?.amenities).length > 0 ? (
                   <ul className="space-y-2">
-                    {amenities.map((amenity: string, index: number) => (
+                    {getAmenitiesArray(listing?.amenities).map((amenity: string, index: number) => (
                       <li key={index} className="flex items-center text-blue-200">
                         <span className="text-yellow-400 mr-2">✓</span>
                         {amenity}
