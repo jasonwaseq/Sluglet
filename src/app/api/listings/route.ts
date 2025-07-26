@@ -66,18 +66,19 @@ export async function GET(request: NextRequest) {
       filters.push({ user: { supabaseId } });
     }
     
-    // Debug: Check if there are any listings at all
-    const allListings = await prisma.listing.findMany({
-      include: {
-        user: {
-          select: {
-            supabaseId: true,
-            email: true
+    // Add amenities filtering at database level using JSON contains
+    if (amenities) {
+      const amenityList = amenities.split(',').map(a => a.trim()).filter(Boolean);
+      // Create a filter that checks if the amenities JSON contains all required amenities
+      amenityList.forEach(amenity => {
+        filters.push({
+          amenities: {
+            contains: `"${amenity}"`
           }
-        }
-      }
-    });
-    console.log('All listings in database:', allListings.map(l => ({ id: l.id, title: l.title, userSupabaseId: l.user?.supabaseId, userEmail: l.user?.email })));
+        });
+      });
+    }
+    
     if (duration) {
       const parts = duration.split('-');
       if (parts.length === 6) {
@@ -98,58 +99,51 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20', 10);
     const skip = (page - 1) * limit;
 
-    const totalCount = await prisma.listing.count({ where: whereClause });
-    const listings = await prisma.listing.findMany({
-      where: whereClause,
-      include: {
-        user: {
-          select: {
-            email: true
+    // Use Promise.all to run count and findMany in parallel
+    const [totalCount, listings] = await Promise.all([
+      prisma.listing.count({ where: whereClause }),
+      prisma.listing.findMany({
+        where: whereClause,
+        include: {
+          user: {
+            select: {
+              email: true
+            }
           }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      skip,
-      take: limit
-    });
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        skip,
+        take: limit
+      })
+    ]);
     
     console.log(`Found ${listings.length} listings from database`);
     
-    // Debug: Log listing dates to check filtering
-    if (duration) {
-      console.log('=== Date Filtering Debug ===');
-      listings.forEach((listing, index) => {
-        console.log(`Listing ${index + 1}: availableFrom=${listing.availableFrom}, availableTo=${listing.availableTo}`);
-      });
-      console.log('=== End Debug ===');
-    }
-    
-    // Filter by amenities in-memory (since amenities is stored as JSON string)
-    let filteredListings = listings;
-    if (amenities) {
-      const amenityList = amenities.split(',').map(a => a.trim()).filter(Boolean);
-      filteredListings = listings.filter((listing: Listing) => {
-        let listingAmenities: string[] = [];
-        try {
-          listingAmenities = typeof listing.amenities === 'string' ? JSON.parse(listing.amenities) : listing.amenities;
-        } catch {
-          listingAmenities = [];
-        }
-        // Must contain all selected amenities
-        return amenityList.every(a => listingAmenities.includes(a));
-      });
-    }
-
-    console.log(`Found ${filteredListings.length} listings after amenities filtering`);
-    
-    // Parse images and amenities JSON for each listing
-    const listingsWithParsedData = filteredListings.map((listing: Listing) => ({
-      ...listing,
-      images: listing.images ? JSON.parse(listing.images as string) : [],
-      amenities: listing.amenities ? JSON.parse(listing.amenities as string) : []
-    }));
+    // Parse images and amenities JSON only for the returned listings
+    const listingsWithParsedData = listings.map((listing: Listing) => {
+      let parsedImages = [];
+      let parsedAmenities = [];
+      
+      try {
+        parsedImages = listing.images ? JSON.parse(listing.images as string) : [];
+      } catch {
+        parsedImages = [];
+      }
+      
+      try {
+        parsedAmenities = listing.amenities ? JSON.parse(listing.amenities as string) : [];
+      } catch {
+        parsedAmenities = [];
+      }
+      
+      return {
+        ...listing,
+        images: parsedImages,
+        amenities: parsedAmenities
+      };
+    });
 
     return NextResponse.json({ listings: listingsWithParsedData, totalCount });
   } catch (error) {
