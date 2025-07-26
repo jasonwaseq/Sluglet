@@ -70,10 +70,17 @@ export default function ProfilePage() {
   const fetchUserListings = async (userId: string) => {
     setLoadingListings(true);
     try {
+      console.log('Fetching listings for user:', userId);
       const response = await fetch(`/api/listings?supabaseId=${userId}`);
+      console.log('Listings API response status:', response.status);
       if (response.ok) {
         const data = await response.json();
+        console.log('Listings API response data:', data);
         setUserListings(data.listings || []);
+      } else {
+        console.error('Failed to fetch listings:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
       }
     } catch (_error) {
       console.error('Error fetching listings:', _error);

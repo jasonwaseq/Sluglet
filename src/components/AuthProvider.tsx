@@ -50,16 +50,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, currentSession: Session | null) => {
-        console.log('Auth state changed:', event, currentSession?.user?.id);
-        
-        // Handle token refresh
-        if (event === 'TOKEN_REFRESHED') {
-          console.log('Token refreshed successfully');
+        try {
+          console.log('Auth state changed:', event, currentSession?.user?.id);
+          
+          // Handle token refresh
+          if (event === 'TOKEN_REFRESHED') {
+            console.log('Token refreshed successfully');
+          }
+          
+          // Handle auth errors
+          if (event === 'TOKEN_REFRESHED' && !currentSession) {
+            console.log('Token refresh failed - no session returned');
+            handleAuthError(new Error('Token refresh failed'));
+            return;
+          }
+          
+          setSession(currentSession);
+          setUser(currentSession?.user ?? null);
+          setLoading(false);
+        } catch (error) {
+          console.error('Error in auth state change:', error);
+          handleAuthError(error as Error);
         }
-        
-        setSession(currentSession);
-        setUser(currentSession?.user ?? null);
-        setLoading(false);
       }
     );
 
