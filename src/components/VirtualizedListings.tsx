@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
@@ -106,7 +106,7 @@ export default function VirtualizedListings({
     >
       <div style={{ height: totalHeight, position: 'relative' }}>
         <div style={{ transform: `translateY(${startIndex * itemHeight}px)` }}>
-          {visibleItems.map((listing, index) => (
+          {visibleItems.map((listing) => (
             <div
               key={listing.id}
               style={{ height: itemHeight }}

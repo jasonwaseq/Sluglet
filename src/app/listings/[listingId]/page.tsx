@@ -151,7 +151,7 @@ export default function ListingDetailPage() {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
     };
-  }, [isFullscreen]);
+  }, [isFullscreen, nextImage, prevImage, closeFullscreen]);
 
   if (loading) {
     return (

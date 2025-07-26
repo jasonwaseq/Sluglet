@@ -184,7 +184,7 @@ function ListingsPageContent() {
     };
 
     fetchListings();
-  }, [memoizedSearchParams, page]);
+  }, [memoizedSearchParams, page, limit]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
