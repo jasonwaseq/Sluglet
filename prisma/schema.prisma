@@ -49,4 +49,13 @@ model Listing {
   updatedAt     DateTime @updatedAt
   userId        String   // Foreign key to User
   user          User     @relation(fields: [userId], references: [id])
+
+  @@index([city])
+  @@index([state])
+  @@index([price])
+  @@index([availableFrom])
+  @@index([availableTo])
+  @@index([property])
+  @@index([bedrooms])
+  @@index([createdAt])
 }

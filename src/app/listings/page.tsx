@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import DateRangePicker from '@/components/DateRangePicker';
 import CityStateAutocomplete from '@/components/CityStateAutocomplete';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import { Suspense } from 'react';
 
 interface Listing {
@@ -72,17 +73,24 @@ function ListingsPageContent() {
   const [limit] = useState(20);
   const [totalCount, setTotalCount] = useState(0);
 
+  // Memoize the search parameters to prevent unnecessary API calls
+  const memoizedSearchParams = useMemo(() => {
+    return {
+      city: searchParams.get('city') || '',
+      state: searchParams.get('state') || '',
+      price: searchParams.get('price') || '',
+      duration: searchParams.get('duration') || '',
+      amenities: searchParams.get('amenities') || '',
+      property: searchParams.get('property') || '',
+      bedrooms: searchParams.get('bedrooms') || ''
+    };
+  }, [searchParams]);
+
   useEffect(() => {
     const fetchListings = async () => {
       try {
         const params = new URLSearchParams();
-        const cityParam = searchParams.get('city') || '';
-        const stateParam = searchParams.get('state') || '';
-        const price = searchParams.get('price') || '';
-        const duration = searchParams.get('duration') || '';
-        const amenities = searchParams.get('amenities') || '';
-        const propertyParam = searchParams.get('property') || '';
-        const bedroomsParam = searchParams.get('bedrooms') || '';
+        const { city: cityParam, state: stateParam, price, duration, amenities, property: propertyParam, bedrooms: bedroomsParam } = memoizedSearchParams;
 
         // Check if there are any URL parameters
         const hasUrlParams = cityParam || stateParam || price || duration || amenities || propertyParam || bedroomsParam;
@@ -176,7 +184,7 @@ function ListingsPageContent() {
     };
 
     fetchListings();
-  }, [searchParams, page]);
+  }, [memoizedSearchParams, page]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -275,7 +283,10 @@ function ListingsPageContent() {
   if (loading) {
     return (
       <div className="min-h-screen bg-blue-900 flex items-center justify-center">
-        <div className="text-xl text-white">Loading listings...</div>
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <div className="text-xl text-white mt-4">Loading listings...</div>
+        </div>
       </div>
     );
   }
@@ -485,7 +496,11 @@ function ListingsPageContent() {
                     src={getListingImage(listing)}
                     alt={listing.title}
                     fill
+                    loading="lazy"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    placeholder="blur"
+                    blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyJckliyjqTzSlT54b6bk+h0R//2Q=="
                   />
                   {/* Image count badge if multiple images */}
                   {listing.images && listing.images.length > 1 && (
