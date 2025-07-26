@@ -62,8 +62,22 @@ export async function GET(request: NextRequest) {
       }
     }
     if (supabaseId) {
+      console.log('Filtering by supabaseId:', supabaseId);
       filters.push({ user: { supabaseId } });
     }
+    
+    // Debug: Check if there are any listings at all
+    const allListings = await prisma.listing.findMany({
+      include: {
+        user: {
+          select: {
+            supabaseId: true,
+            email: true
+          }
+        }
+      }
+    });
+    console.log('All listings in database:', allListings.map(l => ({ id: l.id, title: l.title, userSupabaseId: l.user?.supabaseId, userEmail: l.user?.email })));
     if (duration) {
       const parts = duration.split('-');
       if (parts.length === 6) {

@@ -133,5 +133,40 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ list
   }
 }
 
-// DELETE functions can be implemented when needed
-// export async function DELETE(...) { ... } 
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ listingId: string }> }) {
+  try {
+    const { listingId } = await params;
+    if (!listingId) {
+      return NextResponse.json({ error: 'Listing ID is required' }, { status: 400 });
+    }
+
+    // Get the user ID from the request body
+    let supabaseId: string | undefined = undefined;
+    try {
+      const body = await req.json();
+      supabaseId = body.supabaseId;
+    } catch {
+      // If no body or invalid JSON, treat as missing user
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+    }
+
+    // Fetch the listing to check ownership
+    const listing = await prisma.listing.findUnique({ where: { id: listingId } });
+    if (!listing) {
+      return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
+    }
+    // Check if the user is the owner
+    const user = await prisma.user.findUnique({ where: { id: listing.userId } });
+    if (!user || user.supabaseId !== supabaseId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    // Delete the listing
+    await prisma.listing.delete({ where: { id: listingId } });
+
+    return NextResponse.json({ message: 'Listing deleted successfully' }, { status: 200 });
+  } catch (error) {
+    console.error('Error deleting listing:', error);
+    return NextResponse.json({ error: 'Failed to delete listing' }, { status: 500 });
+  }
+} 
