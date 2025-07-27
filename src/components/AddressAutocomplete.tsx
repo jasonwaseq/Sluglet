@@ -21,6 +21,8 @@ export default function AddressAutocomplete({
   const [address, setAddress] = useState(initialAddress);
   const [city, setCity] = useState(initialCity);
   const [state, setState] = useState(initialState);
+  const [latitude, setLatitude] = useState<number | undefined>(undefined);
+  const [longitude, setLongitude] = useState<number | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const addressInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
@@ -87,6 +89,8 @@ export default function AddressAutocomplete({
               setAddress(streetAddress);
               setCity(cityName);
               setState(stateName);
+              setLatitude(place.geometry?.location?.lat());
+              setLongitude(place.geometry?.location?.lng());
 
               // Call the callback with extracted data
               onAddressSelect(
@@ -121,12 +125,14 @@ export default function AddressAutocomplete({
 
   const handleCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCity(e.target.value);
-    onAddressSelect(address, e.target.value, state);
+    // Preserve existing coordinates when manually editing
+    onAddressSelect(address, e.target.value, state, latitude, longitude);
   };
 
   const handleStateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setState(e.target.value);
-    onAddressSelect(address, city, e.target.value);
+    // Preserve existing coordinates when manually editing
+    onAddressSelect(address, city, e.target.value, latitude, longitude);
   };
 
   return (
