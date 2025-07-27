@@ -133,6 +133,23 @@ export default function EditListingPage() {
           return;
         }
         
+        // Parse amenities if it's a string
+        let parsedAmenities: string[] = [];
+        if (typeof listing.amenities === 'string') {
+          try {
+            parsedAmenities = JSON.parse(listing.amenities);
+          } catch {
+            parsedAmenities = [];
+          }
+        } else if (Array.isArray(listing.amenities)) {
+          parsedAmenities = listing.amenities;
+        }
+        
+        console.log('Original amenities:', listing.amenities);
+        console.log('Parsed amenities:', parsedAmenities);
+        console.log('Listing images:', listing.images);
+        console.log('Listing imageUrl:', listing.imageUrl);
+        
         // Populate form data
         setFormData({
           title: listing.title,
@@ -142,15 +159,15 @@ export default function EditListingPage() {
           state: listing.state || '',
           bedrooms: listing.bedrooms ? listing.bedrooms.toString() : '',
           property: listing.property || '',
-          latitude: listing.latitude,
-          longitude: listing.longitude,
+          latitude: listing.latitude || undefined,
+          longitude: listing.longitude || undefined,
           price: listing.price.toString(),
           contactName: listing.contactName,
           contactEmail: listing.contactEmail,
           contactPhone: listing.contactPhone,
           availableFrom: listing.availableFrom,
           availableTo: listing.availableTo,
-          amenities: listing.amenities || []
+          amenities: parsedAmenities
         });
         
         // Set existing images
@@ -158,9 +175,22 @@ export default function EditListingPage() {
           const images = listing.images.map((url: string, index: number) => ({
             id: `existing-${index}`,
             url,
-            isThumbnail: index === 0 // Assume first image is thumbnail
+            isThumbnail: url === listing.imageUrl || index === 0 // Use imageUrl as thumbnail or fallback to first image
           }));
+          console.log('Setting existing images:', images);
           setExistingImages(images);
+        } else if (listing.imageUrl) {
+          // If no images array but there's an imageUrl, create a single image entry
+          const singleImage = [{
+            id: 'existing-0',
+            url: listing.imageUrl,
+            isThumbnail: true
+          }];
+          console.log('Setting single image:', singleImage);
+          setExistingImages(singleImage);
+        } else {
+          console.log('No images found in listing');
+          setExistingImages([]);
         }
         
       } catch (error) {
@@ -335,6 +365,10 @@ export default function EditListingPage() {
         // If amenities is a comma-separated string, split it
         amenitiesArray = (amenitiesArray as string).split(',').map((a: string) => a.trim()).filter(Boolean);
       }
+      
+      console.log('Amenities before processing:', formData.amenities);
+      console.log('Amenities after processing:', amenitiesArray);
+      
       const listingData = {
         ...formData,
         amenities: amenitiesArray,
@@ -348,7 +382,8 @@ export default function EditListingPage() {
 
       console.log('Sending update request:', {
         url: `/api/listings/${params.listingId}`,
-        data: listingData
+        data: listingData,
+        formData: formData
       });
 
       const response = await fetch(`/api/listings/${params.listingId}`, {
@@ -462,6 +497,8 @@ export default function EditListingPage() {
             </div>
           )}
 
+
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -550,8 +587,8 @@ export default function EditListingPage() {
                   address,
                   city,
                   state,
-                  latitude: lat,
-                  longitude: lng
+                  latitude: lat !== undefined ? lat : prev.latitude,
+                  longitude: lng !== undefined ? lng : prev.longitude
                 }))}
                 initialAddress={formData.address}
                 initialCity={formData.city}
@@ -680,23 +717,33 @@ export default function EditListingPage() {
                 Photos
               </label>
               
-              {/* Existing Images */}
-              {existingImages.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-white mb-3">Current Photos</h3>
+              {/* Existing Images - Always Show */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-white mb-3">Current Photos</h3>
+                {existingImages.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {existingImages.map((image) => (
                       <div key={image.id} className="relative group">
-                        <div className={`relative h-32 rounded-lg overflow-hidden border-2 transition-all ${
+                        <div className={`relative h-32 rounded-lg overflow-hidden border-2 transition-all bg-gray-600 ${
                           image.isThumbnail 
                             ? 'border-yellow-400' 
                             : 'border-transparent hover:border-blue-400'
                         }`}>
-                          <Image
+                          <img
                             src={image.url}
                             alt="Listing image"
-                            fill
-                            className="object-cover"
+                            className="w-full h-full object-cover"
+                            onLoad={(e) => {
+                              console.log('Image loaded successfully:', image.url);
+                              console.log('Image element:', e.target);
+                            }}
+                            onError={(e) => {
+                              console.error('Image failed to load:', image.url);
+                              console.error('Error details:', e);
+                              // Fallback to a placeholder image
+                              const target = e.target as HTMLImageElement;
+                              target.src = "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop";
+                            }}
                           />
                           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                             <div className="flex gap-2">
@@ -731,8 +778,14 @@ export default function EditListingPage() {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="p-4 bg-blue-700 rounded-lg text-center">
+                    <p className="text-blue-200">No existing photos found</p>
+                  </div>
+                )}
+              </div>
+              
+
 
               {/* New Image Upload */}
               <div className="mb-6">

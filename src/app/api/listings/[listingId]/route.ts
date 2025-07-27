@@ -80,10 +80,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ list
       return NextResponse.json({ error: 'Listing ID is required' }, { status: 400 });
     }
     const body = await req.json();
+    console.log('PUT request body:', body);
+    
     // Validate required fields (customize as needed)
     const requiredFields = ['title', 'description', 'city', 'state', 'bedrooms', 'property', 'price', 'contactName', 'contactEmail', 'contactPhone', 'availableFrom', 'availableTo'];
     for (const field of requiredFields) {
       if (!body[field]) {
+        console.log(`Missing required field: ${field}, value:`, body[field]);
         return NextResponse.json({ error: `Missing required field: ${field}` }, { status: 400 });
       }
     }
